@@ -1,33 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
+import { resolveEquipment } from '$lib/server/equipment';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const db = getDb();
-	const bean = db.prepare('SELECT id, name, roaster FROM beans WHERE id = ?').get(params.id);
+	const bean = db.prepare('SELECT id, name, roaster FROM beans WHERE id = ?').get(params.id) as { id: string; name: string; roaster: string | null } | undefined;
 	if (!bean) throw error(404, 'Bean not found');
 	return { bean };
 };
-
-function resolveEquipment(
-	db: ReturnType<typeof getDb>,
-	table: string,
-	id: string | null,
-	name: string | null
-): string | null {
-	if (id) return id;
-	if (!name) return null;
-
-	const existing = db
-		.prepare(`SELECT id FROM ${table} WHERE name = ? COLLATE NOCASE`)
-		.get(name) as { id: string } | undefined;
-	if (existing) return existing.id;
-
-	const result = db
-		.prepare(`INSERT INTO ${table} (name) VALUES (?) RETURNING id`)
-		.get(name) as { id: string };
-	return result.id;
-}
 
 export const actions: Actions = {
 	default: async ({ request, params }) => {

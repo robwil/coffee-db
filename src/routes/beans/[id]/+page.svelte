@@ -1,14 +1,16 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { ROAST_LEVELS } from '$lib/types';
+	import { ROAST_LEVELS, type Bean } from '$lib/types';
 	import BrewCard from '$lib/components/BrewCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 
+	const bean = $derived(data.bean as unknown as Bean);
+
 	let activeTab = $state<'espresso' | 'pourover'>('espresso');
 
 	const roastLabel = $derived(
-		ROAST_LEVELS.find((r) => r.value === data.bean.roast_level)?.label ?? null
+		ROAST_LEVELS.find((r) => r.value === bean.roast_level)?.label ?? null
 	);
 </script>
 
@@ -16,36 +18,36 @@
 	<div class="bean-detail card">
 		<div class="bean-header">
 			<div>
-				<h1>{data.bean.name}</h1>
-				{#if data.bean.roaster}
+				<h1>{bean.name}</h1>
+				{#if bean.roaster}
 					<p class="roaster">
-						by {data.bean.roaster}
-						{#if data.bean.roaster_city}, {data.bean.roaster_city}{/if}
-						{#if data.bean.roaster_country} ({data.bean.roaster_country}){/if}
+						by {bean.roaster}
+						{#if bean.roaster_city}, {bean.roaster_city}{/if}
+						{#if bean.roaster_country} ({bean.roaster_country}){/if}
 					</p>
 				{/if}
 			</div>
 		</div>
 
 		<div class="bean-tags">
-			{#if data.bean.origin}
-				<span class="tag">{data.bean.origin}</span>
+			{#if bean.origin}
+				<span class="tag">{bean.origin}</span>
 			{/if}
 			{#if roastLabel}
 				<span class="tag">{roastLabel}</span>
 			{/if}
-			{#if data.bean.caffeine && data.bean.caffeine !== 'full'}
-				<span class="tag">{data.bean.caffeine}</span>
+			{#if bean.caffeine && bean.caffeine !== 'full'}
+				<span class="tag">{bean.caffeine}</span>
 			{/if}
 		</div>
 
-		{#if data.bean.tasting_notes}
-			<p class="tasting-notes">{data.bean.tasting_notes}</p>
+		{#if bean.tasting_notes}
+			<p class="tasting-notes">{bean.tasting_notes}</p>
 		{/if}
 
-		{#if data.bean.price && data.bean.weight_grams}
+		{#if bean.price && bean.weight_grams}
 			<p class="price">
-				{data.bean.currency ?? ''}{data.bean.price} / {data.bean.weight_grams}g
+				{bean.currency ?? ''}{bean.price} / {bean.weight_grams}g
 			</p>
 		{/if}
 	</div>
@@ -70,11 +72,11 @@
 
 		<div class="brew-actions">
 			{#if activeTab === 'espresso'}
-				<a href="/beans/{data.bean.id}/espresso/new" class="btn btn-primary">
+				<a href="/beans/{bean.id}/espresso/new" class="btn btn-primary">
 					+ Add Espresso Recipe
 				</a>
 			{:else}
-				<a href="/beans/{data.bean.id}/pourover/new" class="btn btn-primary">
+				<a href="/beans/{bean.id}/pourover/new" class="btn btn-primary">
 					+ Add Pourover Recipe
 				</a>
 			{/if}

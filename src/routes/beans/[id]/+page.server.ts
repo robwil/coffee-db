@@ -1,11 +1,12 @@
 import { error } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
+import type { Bean, EspressoBrew, PouroverBrew } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const db = getDb();
 
-	const bean = db.prepare('SELECT * FROM beans WHERE id = ?').get(params.id);
+	const bean = db.prepare('SELECT * FROM beans WHERE id = ?').get(params.id) as Bean | undefined;
 	if (!bean) throw error(404, 'Bean not found');
 
 	const espressoBrews = db

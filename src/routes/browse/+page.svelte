@@ -1,8 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { Machine, Grinder, Dripper } from '$lib/types';
 	import BeanCard from '$lib/components/BeanCard.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	const machines = data.filters.machines as unknown as Machine[];
+	const grinders = data.filters.grinders as unknown as Grinder[];
+	const drippers = data.filters.drippers as unknown as Dripper[];
 
 	function buildUrl(param: string, value: string | null): string {
 		const params = new URLSearchParams();
@@ -48,7 +53,7 @@
 				}}
 			>
 				<option value="">All machines</option>
-				{#each data.filters.machines as machine}
+				{#each machines as machine}
 					<option value={machine.id} selected={data.activeFilters.machineId === machine.id}>
 						{machine.name}
 					</option>
@@ -66,7 +71,7 @@
 				}}
 			>
 				<option value="">All drippers</option>
-				{#each data.filters.drippers as dripper}
+				{#each drippers as dripper}
 					<option value={dripper.id} selected={data.activeFilters.dripperId === dripper.id}>
 						{dripper.name}
 					</option>
@@ -84,7 +89,7 @@
 				}}
 			>
 				<option value="">All grinders</option>
-				{#each data.filters.grinders as grinder}
+				{#each grinders as grinder}
 					<option value={grinder.id} selected={data.activeFilters.grinderId === grinder.id}>
 						{grinder.name}
 					</option>

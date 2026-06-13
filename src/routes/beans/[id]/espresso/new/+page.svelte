@@ -4,12 +4,13 @@
 	import EquipmentAutocomplete from '$lib/components/EquipmentAutocomplete.svelte';
 
 	let { data }: { data: PageData } = $props();
+	const bean = data.bean as unknown as { id: string; name: string };
 	let showAdvanced = $state(false);
 </script>
 
 <div class="container">
 	<p class="breadcrumb">
-		<a href="/beans/{data.bean.id}">{data.bean.name}</a> &rsaquo; Add Espresso Recipe
+		<a href="/beans/{bean.id}">{bean.name}</a> &rsaquo; Add Espresso Recipe
 	</p>
 	<h1>Add Espresso Recipe</h1>
 

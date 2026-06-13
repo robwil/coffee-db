@@ -1,4 +1,5 @@
 import { getDb } from '$lib/server/db';
+import type { Machine, Grinder, Dripper } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -59,9 +60,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		)
 		.all(...params);
 
-	const machines = db.prepare('SELECT * FROM machines ORDER BY name COLLATE NOCASE').all();
-	const grinders = db.prepare('SELECT * FROM grinders ORDER BY name COLLATE NOCASE').all();
-	const drippers = db.prepare('SELECT * FROM drippers ORDER BY name COLLATE NOCASE').all();
+	const machines = db.prepare('SELECT * FROM machines ORDER BY name COLLATE NOCASE').all() as Machine[];
+	const grinders = db.prepare('SELECT * FROM grinders ORDER BY name COLLATE NOCASE').all() as Grinder[];
+	const drippers = db.prepare('SELECT * FROM drippers ORDER BY name COLLATE NOCASE').all() as Dripper[];
 	const roasters = db
 		.prepare(
 			'SELECT DISTINCT roaster FROM beans WHERE roaster IS NOT NULL ORDER BY roaster COLLATE NOCASE'
