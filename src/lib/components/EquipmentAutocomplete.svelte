@@ -15,12 +15,16 @@
 	let results = $state<any[]>([]);
 	let selectedId = $state('');
 	let selectedName = $state('');
+	let manufacturer = $state('');
 	let showDropdown = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
+
+	const isNewEntry = $derived(!selectedId && query.trim().length > 0);
 
 	function search() {
 		clearTimeout(searchTimeout);
 		selectedId = '';
+		manufacturer = '';
 		if (!query.trim()) {
 			results = [];
 			showDropdown = false;
@@ -37,6 +41,7 @@
 		selectedId = item.id;
 		selectedName = item.name;
 		query = item.name;
+		manufacturer = '';
 		showDropdown = false;
 	}
 
@@ -54,6 +59,7 @@
 	<label for={name}>{label}</label>
 	<input type="hidden" name="{name}_id" value={selectedId} />
 	<input type="hidden" name="{name}_name" value={selectedName || query.trim()} />
+	<input type="hidden" name="{name}_manufacturer" value={manufacturer} />
 	<input
 		type="text"
 		id={name}
@@ -77,6 +83,18 @@
 		</div>
 	{/if}
 </div>
+
+{#if isNewEntry}
+	<div class="form-group manufacturer-field">
+		<label for="{name}_manufacturer_input">Manufacturer (optional)</label>
+		<input
+			type="text"
+			id="{name}_manufacturer_input"
+			bind:value={manufacturer}
+			placeholder="e.g. Breville, La Marzocco, Niche..."
+		/>
+	</div>
+{/if}
 
 <style>
 	.autocomplete {
@@ -115,5 +133,11 @@
 	.muted {
 		color: var(--color-text-muted);
 		font-size: 0.85rem;
+	}
+
+	.manufacturer-field {
+		margin-top: -0.5rem;
+		padding-left: 1rem;
+		border-left: 2px solid var(--color-border-light);
 	}
 </style>

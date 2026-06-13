@@ -6,7 +6,8 @@ export function resolveEquipment(
 	db: Database.Database,
 	table: string,
 	id: string | null,
-	name: string | null
+	name: string | null,
+	manufacturer: string | null = null
 ): string | null {
 	if (!ALLOWED_TABLES.has(table)) throw new Error(`Invalid table: ${table}`);
 	if (id) return id;
@@ -18,7 +19,7 @@ export function resolveEquipment(
 	if (existing) return existing.id;
 
 	const result = db
-		.prepare(`INSERT INTO ${table} (name) VALUES (?) RETURNING id`)
-		.get(name) as { id: string };
+		.prepare(`INSERT INTO ${table} (name, manufacturer) VALUES (?, ?) RETURNING id`)
+		.get(name, manufacturer) as { id: string };
 	return result.id;
 }

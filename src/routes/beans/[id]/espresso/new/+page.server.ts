@@ -27,14 +27,16 @@ export const actions: Actions = {
 			db,
 			'machines',
 			form.get('machine_id')?.toString() || null,
-			form.get('machine_name')?.toString().trim() || null
+			form.get('machine_name')?.toString().trim() || null,
+			form.get('machine_manufacturer')?.toString().trim() || null
 		);
 
 		const grinderId = resolveEquipment(
 			db,
 			'grinders',
 			form.get('grinder_id')?.toString() || null,
-			form.get('grinder_name')?.toString().trim() || null
+			form.get('grinder_name')?.toString().trim() || null,
+			form.get('grinder_manufacturer')?.toString().trim() || null
 		);
 
 		const totalTime = form.get('total_time_seconds') ? Number(form.get('total_time_seconds')) : null;

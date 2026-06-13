@@ -26,14 +26,16 @@ export const actions: Actions = {
 			db,
 			'drippers',
 			form.get('dripper_id')?.toString() || null,
-			form.get('dripper_name')?.toString().trim() || null
+			form.get('dripper_name')?.toString().trim() || null,
+			form.get('dripper_manufacturer')?.toString().trim() || null
 		);
 
 		const grinderId = resolveEquipment(
 			db,
 			'grinders',
 			form.get('grinder_id')?.toString() || null,
-			form.get('grinder_name')?.toString().trim() || null
+			form.get('grinder_name')?.toString().trim() || null,
+			form.get('grinder_manufacturer')?.toString().trim() || null
 		);
 
 		const waterGrams = form.get('water_grams') ? Number(form.get('water_grams')) : null;
