@@ -1,0 +1,106 @@
+import { error, fail, redirect } from '@sveltejs/kit';
+import { getDb } from '$lib/server/db';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ params }) => {
+	const db = getDb();
+	const bean = db.prepare('SELECT id, name, roaster FROM beans WHERE id = ?').get(params.id);
+	if (!bean) throw error(404, 'Bean not found');
+	return { bean };
+};
+
+function resolveEquipment(
+	db: ReturnType<typeof getDb>,
+	table: string,
+	id: string | null,
+	name: string | null
+): string | null {
+	if (id) return id;
+	if (!name) return null;
+
+	const existing = db
+		.prepare(`SELECT id FROM ${table} WHERE name = ? COLLATE NOCASE`)
+		.get(name) as { id: string } | undefined;
+	if (existing) return existing.id;
+
+	const result = db
+		.prepare(`INSERT INTO ${table} (name) VALUES (?) RETURNING id`)
+		.get(name) as { id: string };
+	return result.id;
+}
+
+export const actions: Actions = {
+	default: async ({ request, params }) => {
+		const form = await request.formData();
+
+		const doseGrams = Number(form.get('dose_grams'));
+		if (!doseGrams) return fail(400, { error: 'Dose is required' });
+
+		const db = getDb();
+
+		const bean = db.prepare('SELECT id FROM beans WHERE id = ?').get(params.id);
+		if (!bean) throw error(404, 'Bean not found');
+
+		const dripperId = resolveEquipment(
+			db,
+			'drippers',
+			form.get('dripper_id')?.toString() || null,
+			form.get('dripper_name')?.toString().trim() || null
+		);
+
+		const grinderId = resolveEquipment(
+			db,
+			'grinders',
+			form.get('grinder_id')?.toString() || null,
+			form.get('grinder_name')?.toString().trim() || null
+		);
+
+		const waterGrams = form.get('water_grams') ? Number(form.get('water_grams')) : null;
+		const totalTime = form.get('total_time_seconds') ? Number(form.get('total_time_seconds')) : null;
+		const grindSetting = form.get('grind_setting')?.toString().trim() || null;
+		const rating = form.get('rating') ? Number(form.get('rating')) : null;
+		const tastingNotes = form.get('tasting_notes')?.toString().trim() || null;
+		const daysRested = form.get('days_rested') ? Number(form.get('days_rested')) : null;
+		const filterType = form.get('filter_type')?.toString() || null;
+		const burrSet = form.get('burr_set')?.toString().trim() || null;
+		const kettle = form.get('kettle')?.toString().trim() || null;
+		const waterTempC = form.get('water_temp_c') ? Number(form.get('water_temp_c')) : null;
+		const bloomTime = form.get('bloom_time_seconds') ? Number(form.get('bloom_time_seconds')) : null;
+		const bloomWater = form.get('bloom_water_grams') ? Number(form.get('bloom_water_grams')) : null;
+		const pourCount = form.get('pour_count') ? Number(form.get('pour_count')) : null;
+		const pourTechnique = form.get('pour_technique')?.toString().trim() || null;
+		const additionalNotes = form.get('additional_notes')?.toString().trim() || null;
+		const submittedBy = form.get('submitted_by')?.toString().trim() || null;
+
+		db.prepare(
+			`INSERT INTO pourover_brews (bean_id, dripper_id, grinder_id, dose_grams, water_grams,
+				total_time_seconds, grind_setting, rating, tasting_notes, days_rested, filter_type,
+				burr_set, kettle, water_temp_c, bloom_time_seconds, bloom_water_grams, pour_count,
+				pour_technique, additional_notes, submitted_by)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			params.id,
+			dripperId,
+			grinderId,
+			doseGrams,
+			waterGrams,
+			totalTime,
+			grindSetting,
+			rating,
+			tastingNotes,
+			daysRested,
+			filterType,
+			burrSet,
+			kettle,
+			waterTempC,
+			bloomTime,
+			bloomWater,
+			pourCount,
+			pourTechnique,
+			additionalNotes,
+			submittedBy
+		);
+
+		throw redirect(303, `/beans/${params.id}`);
+	}
+};
