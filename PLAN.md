@@ -4,15 +4,20 @@
 
 A public web app for tracking espresso and pourover recipes tied to specific coffee beans. Inspired by a community Reddit espresso spreadsheet with ~250 entries. The app is **public by design** — no login required to browse or submit. Spam prevention via Cloudflare Turnstile. Auth (Google OAuth) is a future addition, not MVP.
 
-**Primary use case:** "Find all beans that people have used with my machine" — the app is a discovery tool, not just a recipe log. Users pick their machine, see what beans others have brewed on it, then drill into specific recipes.
+See @USE_CASES.md for important use cases.
 
 ---
 
 ## UX Flow
 
 ### Discovery path (primary)
-1. **Landing page** — dual entry: search by bean OR browse by machine
-2. **Machine view** — select a machine (e.g. "La Marzocco Linea Micra") → see all beans brewed on it, with brew count and avg rating. Optionally filter by roaster country (for availability — AU vs US).
+1. **Landing page** — search by bean, or jump to the browse page
+2. **Browse page** — single filterable view of all brews. Filters: machine, dripper, grinder, roaster, origin, roaster country. Filters are combinable (e.g. "La Marzocco Linea Micra" + "Ethiopia" → all Ethiopian beans brewed on that machine). Shows beans with brew count and avg rating. Each use case maps to a filter combination:
+   - *Home Barista:* filter by machine → see what beans others brew on it
+   - *Roaster Fanboy:* filter by roaster → see recipes across machines, compare approaches
+   - *Single Origin Snob:* filter by origin → see only beans from their preferred country
+   
+   **Espresso vs pourover scoping:** No explicit brew type toggle. Filtering by machine implicitly returns espresso brews; filtering by dripper implicitly returns pourover brews. Cross-type filters (roaster, origin, country, grinder) return both brew types — result cards indicate which type each brew is. Combining machine + dripper returns empty results (expected, since no brew has both).
 3. **Bean page** — shows bean details + all brew recipes for it. Recipes grouped by espresso / pourover tabs. Each recipe card shows dose/yield/time/rating prominently, with grinder + setting as secondary info.
 4. **Add brew** — from the bean page, pick espresso or pourover, fill out recipe form.
 
@@ -107,7 +112,8 @@ CREATE TABLE espresso_brews (
   grinder_id        TEXT REFERENCES grinders(id),
   dose_grams        REAL NOT NULL,
   yield_grams       REAL NOT NULL,
-  shot_time_seconds REAL,
+  total_time_seconds      REAL,        -- total brew time including pre-infusion
+  preinfusion_time_seconds REAL,       -- optional; must be < total_time_seconds
   grind_setting     TEXT,
   rating            REAL CHECK (rating >= 1 AND rating <= 10),
   tasting_notes     TEXT,
@@ -123,10 +129,10 @@ CREATE TABLE espresso_brews (
 );
 ```
 
-**Core fields:** `machine_id`, `dose_grams`, `yield_grams`, `shot_time_seconds`, `grinder_id`, `grind_setting`, `rating`, `tasting_notes`
-**Advanced fields:** `days_rested`, `burr_set`, `water_temp_c`, `basket`, `pressure_profile`, `additional_notes`, `submitted_by`
+**Core fields:** `machine_id`, `dose_grams`, `yield_grams`, `total_time_seconds`, `grinder_id`, `grind_setting`, `rating`, `tasting_notes`
+**Advanced fields:** `preinfusion_time_seconds`, `days_rested`, `burr_set`, `water_temp_c`, `basket`, `pressure_profile`, `additional_notes`, `submitted_by`
 
-Note: `machine_id` references the `machines` table and is the primary search/filter dimension — prominent in the form and in browse views. `grinder_id` references the `grinders` table; `grind_setting` remains free text since settings are incomparable across grinder models. Brew ratio is not stored — it's computed from dose/yield at display time.
+Note: `machine_id` references the `machines` table and is the primary search/filter dimension — prominent in the form and in browse views. `grinder_id` references the `grinders` table; `grind_setting` remains free text since settings are incomparable across grinder models. Brew ratio is not stored — it's computed from dose/yield at display time. `total_time_seconds` is inclusive of pre-infusion; `preinfusion_time_seconds` is optional and shown below total time in the form. Post-infusion time (total minus pre-infusion) can be computed at display time.
 
 ### `pourover_brews`
 
@@ -170,6 +176,7 @@ Note: `dripper_id` references the `drippers` table and is the primary equipment 
 CREATE INDEX idx_beans_name_roaster ON beans (name COLLATE NOCASE, roaster COLLATE NOCASE);
 CREATE INDEX idx_beans_roaster ON beans (roaster COLLATE NOCASE);
 CREATE INDEX idx_beans_country ON beans (roaster_country COLLATE NOCASE);
+CREATE INDEX idx_beans_origin ON beans (origin COLLATE NOCASE);
 
 -- Browse brews by bean
 CREATE INDEX idx_espresso_brews_bean ON espresso_brews (bean_id);
@@ -216,6 +223,10 @@ Kept as a standalone FTS table (not external-content mode) to avoid rowid issues
 - **If they add new:** Allow it even if similar exists.
 - **Post-MVP:** Admin merge tool — just `UPDATE brew SET bean_id = :canonical WHERE bean_id = :dupe`.
 
+### Equipment Dedup Strategy
+
+Same pattern as beans. When submitting a brew, equipment fields (machine, grinder, dripper) use autocomplete against existing entries. Fuzzy-match shows suggestions; if the user picks an existing one, link by FK. If not found, create a new row on-the-fly. Post-MVP admin merge applies here too.
+
 ---
 
 ## Seed Data
@@ -238,7 +249,8 @@ Kept as a standalone FTS table (not external-content mode) to avoid rowid issues
 |---|---|---|
 | Separate espresso/pourover tables | Yes | Explicit fork — separate forms, separate browsing, separate search |
 | Shared beans table | Yes | Bridge between brew types; same bean can have both espresso and pourover recipes |
-| Machine as primary discovery dimension | Yes | Primary use case: "find beans for my machine" |
+| Single browse page with filters | Yes | Machine, roaster, origin, dripper, grinder as combinable filters on one page — covers all discovery use cases without duplicating routes |
+| Equipment created on-the-fly | Yes | Same fuzzy-match-or-create pattern as beans — no separate equipment entry forms needed |
 | Rating scale | 1-10 (REAL) | Matches community spreadsheet; allows half-points (7.5) |
 | Separate equipment tables | Yes | `machines`, `grinders`, `drippers` as distinct tables — cleaner if fields diverge later, referenced by FK from brew tables |
 | `grind_setting` as TEXT | Yes | Settings are incomparable across grinders ("1.75", "10", "3 clicks") |
@@ -253,16 +265,11 @@ Kept as a standalone FTS table (not external-content mode) to avoid rowid issues
 
 ```
 src/routes/
-  +page.svelte                    -- Landing: bean search + machine browse
-  +page.server.ts                 -- Search action (FTS query), popular machines list
-  machines/
-    [id]/
-      +page.svelte                -- Machine view: all beans brewed on this machine
-      +page.server.ts             -- Query espresso_brews grouped by bean, with counts/avg ratings
-  drippers/
-    [id]/
-      +page.svelte                -- Dripper view: all beans brewed with this dripper
-      +page.server.ts             -- Query pourover_brews grouped by bean
+  +page.svelte                    -- Landing: bean search + link to browse
+  +page.server.ts                 -- Search action (FTS query)
+  browse/
+    +page.svelte                  -- Filterable browse: machine, dripper, grinder, roaster, origin, country
+    +page.server.ts               -- Query brews with filters, grouped by bean, with counts/avg ratings
   beans/
     new/
       +page.svelte                -- Add new bean form
