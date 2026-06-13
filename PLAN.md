@@ -36,6 +36,39 @@ A public web app for tracking espresso and pourover recipes tied to specific cof
 
 ## Database Schema
 
+### `machines`
+
+```sql
+CREATE TABLE machines (
+  id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  name            TEXT NOT NULL,
+  manufacturer    TEXT,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+```
+
+### `grinders`
+
+```sql
+CREATE TABLE grinders (
+  id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  name            TEXT NOT NULL,
+  manufacturer    TEXT,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+```
+
+### `drippers`
+
+```sql
+CREATE TABLE drippers (
+  id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  name            TEXT NOT NULL,
+  manufacturer    TEXT,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+```
+
 ### `beans` — shared across brew types
 
 ```sql
@@ -43,14 +76,13 @@ CREATE TABLE beans (
   id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   name            TEXT NOT NULL,
   roaster         TEXT,
-  origin          TEXT,
+  origin          TEXT,              -- dropdown: country name, "Blend", or "Other"
   roast_level     INTEGER,           -- 1 (lightest) to 5 (darkest)
   caffeine        TEXT DEFAULT 'full', -- 'full', 'decaf', 'half-caf'
-  roast_date      TEXT,              -- ISO YYYY-MM-DD
   roaster_city    TEXT,
   roaster_country TEXT,
-  weight_grams    REAL,
-  price           REAL,
+  weight_grams    REAL,              -- bag size in grams (250, 500, 1000, etc.)
+  price           REAL,              -- price for the listed weight_grams
   currency        TEXT,              -- ISO 4217: USD, EUR, CAD, etc.
   product_url     TEXT,
   tasting_notes   TEXT,              -- free-text
@@ -60,8 +92,10 @@ CREATE TABLE beans (
 );
 ```
 
-**Core fields (always visible):** `name`, `roaster`, `origin`, `roast_level`
+**Core fields (always visible):** `name`, `roaster`, `origin`, `roast_level`, `roaster_country`
 **Advanced fields (behind toggle):** everything else
+
+Note: `origin` is presented as a dropdown of common coffee-producing countries (Ethiopia, Colombia, Brazil, Kenya, Guatemala, etc.) with "Blend" and "Other" options for data cleanliness. `weight_grams` and `price` reflect a single bag size chosen by the submitter — different bag sizes (250g, 500g, 1kg) at different price points are expected; submitters pick whichever they purchased.
 
 ### `espresso_brews`
 
@@ -69,6 +103,8 @@ CREATE TABLE beans (
 CREATE TABLE espresso_brews (
   id                TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   bean_id           TEXT NOT NULL REFERENCES beans(id),
+  machine_id        TEXT REFERENCES machines(id),
+  grinder_id        TEXT REFERENCES grinders(id),
   dose_grams        REAL NOT NULL,
   yield_grams       REAL NOT NULL,
   shot_time_seconds REAL,
@@ -76,13 +112,10 @@ CREATE TABLE espresso_brews (
   rating            REAL CHECK (rating >= 1 AND rating <= 10),
   tasting_notes     TEXT,
   days_rested       INTEGER,
-  espresso_machine  TEXT,
-  grinder           TEXT,
   burr_set          TEXT,
   water_temp_c      REAL,
   basket            TEXT,
   pressure_profile  TEXT,
-  brew_ratio        TEXT,            -- "1:2.5" (auto-computed, user-overridable)
   additional_notes  TEXT,
   submitted_by      TEXT,
   created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -90,10 +123,10 @@ CREATE TABLE espresso_brews (
 );
 ```
 
-**Core fields:** `espresso_machine`, `dose_grams`, `yield_grams`, `shot_time_seconds`, `grinder`, `grind_setting`, `rating`, `tasting_notes`
-**Advanced fields:** `days_rested`, `burr_set`, `water_temp_c`, `basket`, `pressure_profile`, `brew_ratio`, `additional_notes`, `submitted_by`
+**Core fields:** `machine_id`, `dose_grams`, `yield_grams`, `shot_time_seconds`, `grinder_id`, `grind_setting`, `rating`, `tasting_notes`
+**Advanced fields:** `days_rested`, `burr_set`, `water_temp_c`, `basket`, `pressure_profile`, `additional_notes`, `submitted_by`
 
-Note: `espresso_machine` is the primary search/filter dimension — prominent in the form and in browse views. `grinder` + `grind_setting` are core but displayed as secondary info beneath the main recipe parameters.
+Note: `machine_id` references the `machines` table and is the primary search/filter dimension — prominent in the form and in browse views. `grinder_id` references the `grinders` table; `grind_setting` remains free text since settings are incomparable across grinder models. Brew ratio is not stored — it's computed from dose/yield at display time.
 
 ### `pourover_brews`
 
@@ -101,16 +134,16 @@ Note: `espresso_machine` is the primary search/filter dimension — prominent in
 CREATE TABLE pourover_brews (
   id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   bean_id             TEXT NOT NULL REFERENCES beans(id),
+  dripper_id          TEXT REFERENCES drippers(id),
+  grinder_id          TEXT REFERENCES grinders(id),
   dose_grams          REAL NOT NULL,
   water_grams         REAL,
   total_time_seconds  REAL,
   grind_setting       TEXT,
-  dripper             TEXT,           -- "V60 02", "Chemex", "Kalita Wave 185"
   rating              REAL CHECK (rating >= 1 AND rating <= 10),
   tasting_notes       TEXT,
   days_rested         INTEGER,
   filter_type         TEXT,           -- "paper", "metal", "cloth"
-  grinder             TEXT,
   burr_set            TEXT,
   kettle              TEXT,
   water_temp_c        REAL,
@@ -118,7 +151,6 @@ CREATE TABLE pourover_brews (
   bloom_water_grams   REAL,
   pour_count          INTEGER,
   pour_technique      TEXT,           -- "4:6 method", "Hoffmann", etc.
-  brew_ratio          TEXT,           -- "1:15"
   additional_notes    TEXT,
   submitted_by        TEXT,
   created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -126,10 +158,10 @@ CREATE TABLE pourover_brews (
 );
 ```
 
-**Core fields:** `dripper`, `dose_grams`, `water_grams`, `total_time_seconds`, `grinder`, `grind_setting`, `rating`, `tasting_notes`
+**Core fields:** `dripper_id`, `dose_grams`, `water_grams`, `total_time_seconds`, `grinder_id`, `grind_setting`, `rating`, `tasting_notes`
 **Advanced fields:** everything else
 
-Note: For pourover, `dripper` is the equivalent of espresso machine — the primary equipment dimension.
+Note: `dripper_id` references the `drippers` table and is the primary equipment dimension for pourover (equivalent of machine for espresso). `grinder_id` references the `grinders` table. Brew ratio is not stored — it's computed from dose/water at display time.
 
 ### Indexes
 
@@ -137,6 +169,7 @@ Note: For pourover, `dripper` is the equivalent of espresso machine — the prim
 -- Bean search and dedup
 CREATE INDEX idx_beans_name_roaster ON beans (name COLLATE NOCASE, roaster COLLATE NOCASE);
 CREATE INDEX idx_beans_roaster ON beans (roaster COLLATE NOCASE);
+CREATE INDEX idx_beans_country ON beans (roaster_country COLLATE NOCASE);
 
 -- Browse brews by bean
 CREATE INDEX idx_espresso_brews_bean ON espresso_brews (bean_id);
@@ -150,9 +183,16 @@ CREATE INDEX idx_pourover_brews_created ON pourover_brews (created_at DESC);
 CREATE INDEX idx_espresso_brews_rating ON espresso_brews (rating DESC);
 CREATE INDEX idx_pourover_brews_rating ON pourover_brews (rating DESC);
 
--- Browse by machine/dripper (primary discovery use case)
-CREATE INDEX idx_espresso_brews_machine ON espresso_brews (espresso_machine COLLATE NOCASE);
-CREATE INDEX idx_pourover_brews_dripper ON pourover_brews (dripper COLLATE NOCASE);
+-- Browse by machine/dripper/grinder (primary discovery use case)
+CREATE INDEX idx_espresso_brews_machine ON espresso_brews (machine_id);
+CREATE INDEX idx_espresso_brews_grinder ON espresso_brews (grinder_id);
+CREATE INDEX idx_pourover_brews_dripper ON pourover_brews (dripper_id);
+CREATE INDEX idx_pourover_brews_grinder ON pourover_brews (grinder_id);
+
+-- Equipment name lookups
+CREATE INDEX idx_machines_name ON machines (name COLLATE NOCASE);
+CREATE INDEX idx_grinders_name ON grinders (name COLLATE NOCASE);
+CREATE INDEX idx_drippers_name ON drippers (name COLLATE NOCASE);
 ```
 
 ### Full-Text Search (beans)
@@ -200,9 +240,10 @@ Kept as a standalone FTS table (not external-content mode) to avoid rowid issues
 | Shared beans table | Yes | Bridge between brew types; same bean can have both espresso and pourover recipes |
 | Machine as primary discovery dimension | Yes | Primary use case: "find beans for my machine" |
 | Rating scale | 1-10 (REAL) | Matches community spreadsheet; allows half-points (7.5) |
-| Equipment as inline TEXT | Yes | No user accounts in MVP = no equipment entity management. Simpler. |
+| Separate equipment tables | Yes | `machines`, `grinders`, `drippers` as distinct tables — cleaner if fields diverge later, referenced by FK from brew tables |
 | `grind_setting` as TEXT | Yes | Settings are incomparable across grinders ("1.75", "10", "3 clicks") |
-| `brew_ratio` as TEXT | Yes | Auto-computed from dose/yield but user-overridable; preserves intent |
+| No stored `brew_ratio` | Yes | Computed from dose/yield (or dose/water for pourover) at display time — no risk of stale data |
+| `origin` as constrained dropdown | Yes | Country dropdown (Ethiopia, Colombia, etc.) + "Blend" / "Other" for data cleanliness |
 | TEXT primary keys (hex UUIDs) | Yes | Safe for distributed Turso replicas; no sequential ID enumeration |
 | No auth in MVP | Yes | Public-first. Turnstile for spam. Auth adds later as optional "my brews" |
 
@@ -215,11 +256,11 @@ src/routes/
   +page.svelte                    -- Landing: bean search + machine browse
   +page.server.ts                 -- Search action (FTS query), popular machines list
   machines/
-    [name]/
+    [id]/
       +page.svelte                -- Machine view: all beans brewed on this machine
       +page.server.ts             -- Query espresso_brews grouped by bean, with counts/avg ratings
   drippers/
-    [name]/
+    [id]/
       +page.svelte                -- Dripper view: all beans brewed with this dripper
       +page.server.ts             -- Query pourover_brews grouped by bean
   beans/
@@ -242,9 +283,11 @@ src/routes/
       search/
         +server.ts                -- GET: live search suggestions for bean autocomplete
     machines/
-      +server.ts                  -- GET: distinct machine names for autocomplete
+      +server.ts                  -- GET: machine search/autocomplete from machines table
+    grinders/
+      +server.ts                  -- GET: grinder search/autocomplete from grinders table
     drippers/
-      +server.ts                  -- GET: distinct dripper names for autocomplete
+      +server.ts                  -- GET: dripper search/autocomplete from drippers table
 ```
 
 ## File Structure
@@ -256,7 +299,7 @@ src/
       db.ts                       -- Turso client init (@libsql/client)
       schema.sql                  -- All CREATE TABLE / INDEX / FTS
       seed.sql                    -- Seed data INSERTs
-    types.ts                      -- TS types: Bean, EspressoBrew, PouroverBrew
+    types.ts                      -- TS types: Bean, EspressoBrew, PouroverBrew, Machine, Grinder, Dripper
     components/
       BeanSearch.svelte           -- Search input with autocomplete
       BeanCard.svelte             -- Bean summary card (for search results)
