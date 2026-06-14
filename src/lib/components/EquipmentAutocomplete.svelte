@@ -3,12 +3,16 @@
 		label,
 		name,
 		endpoint,
-		placeholder = 'Search...'
+		placeholder = 'Search...',
+		required = false,
+		optional = false
 	}: {
 		label: string;
 		name: string;
 		endpoint: string;
 		placeholder?: string;
+		required?: boolean;
+		optional?: boolean;
 	} = $props();
 
 	let query = $state('');
@@ -17,6 +21,7 @@
 	let selectedName = $state('');
 	let manufacturer = $state('');
 	let showDropdown = $state(false);
+	let highlightIndex = $state(-1);
 	let searchTimeout: ReturnType<typeof setTimeout>;
 
 	const isNewEntry = $derived(!selectedId && query.trim().length > 0);
@@ -25,6 +30,7 @@
 		clearTimeout(searchTimeout);
 		selectedId = '';
 		manufacturer = '';
+		highlightIndex = -1;
 		if (!query.trim()) {
 			results = [];
 			showDropdown = false;
@@ -43,11 +49,35 @@
 		query = item.name;
 		manufacturer = '';
 		showDropdown = false;
+		highlightIndex = -1;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (!showDropdown || results.length === 0) return;
+
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			highlightIndex = (highlightIndex + 1) % results.length;
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			highlightIndex = highlightIndex <= 0 ? results.length - 1 : highlightIndex - 1;
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			if (highlightIndex >= 0 && highlightIndex < results.length) {
+				select(results[highlightIndex]);
+			} else {
+				showDropdown = false;
+			}
+		} else if (e.key === 'Escape') {
+			showDropdown = false;
+			highlightIndex = -1;
+		}
 	}
 
 	function handleBlur() {
 		setTimeout(() => {
 			showDropdown = false;
+			highlightIndex = -1;
 			if (!selectedId && query.trim()) {
 				selectedName = query.trim();
 			}
@@ -56,7 +86,7 @@
 </script>
 
 <div class="form-group autocomplete">
-	<label for={name}>{label}</label>
+	<label for={name}>{label}{#if required} *{/if}{#if optional}&nbsp;<span class="optional-label">(optional)</span>{/if}</label>
 	<input type="hidden" name="{name}_id" value={selectedId} />
 	<input type="hidden" name="{name}_name" value={selectedName || query.trim()} />
 	<input type="hidden" name="{name}_manufacturer" value={manufacturer} />
@@ -65,15 +95,29 @@
 		id={name}
 		bind:value={query}
 		oninput={search}
+		onkeydown={handleKeydown}
 		onblur={handleBlur}
 		onfocus={() => results.length > 0 && (showDropdown = true)}
 		{placeholder}
+		required={required}
 		autocomplete="off"
+		role="combobox"
+		aria-expanded={showDropdown && results.length > 0}
+		aria-activedescendant={highlightIndex >= 0 ? `${name}-option-${highlightIndex}` : undefined}
 	/>
 	{#if showDropdown && results.length > 0}
-		<div class="dropdown">
-			{#each results as item}
-				<button type="button" class="dropdown-item" onclick={() => select(item)}>
+		<div class="dropdown" role="listbox">
+			{#each results as item, i}
+				<button
+					type="button"
+					class="dropdown-item"
+					class:highlighted={i === highlightIndex}
+					id="{name}-option-{i}"
+					role="option"
+					aria-selected={i === highlightIndex}
+					onclick={() => select(item)}
+					onmouseenter={() => (highlightIndex = i)}
+				>
 					{item.name}
 					{#if item.manufacturer}
 						<span class="muted">({item.manufacturer})</span>
@@ -126,13 +170,20 @@
 		font-size: 0.9rem;
 	}
 
-	.dropdown-item:hover {
+	.dropdown-item:hover,
+	.dropdown-item.highlighted {
 		background: var(--color-border-light);
 	}
 
 	.muted {
 		color: var(--color-text-muted);
 		font-size: 0.85rem;
+	}
+
+	.optional-label {
+		font-weight: 400;
+		font-style: italic;
+		color: var(--color-text-muted);
 	}
 
 	.manufacturer-field {

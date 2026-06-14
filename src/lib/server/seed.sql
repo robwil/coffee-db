@@ -1,18 +1,18 @@
 -- Machines
 INSERT OR IGNORE INTO machines (id, name, manufacturer) VALUES
-  ('machine_ecm_sync', 'ECM Synchronika', 'ECM'),
-  ('machine_lm_micra', 'La Marzocco Linea Micra', 'La Marzocco'),
-  ('machine_lm_levax', 'La Marzocco Leva X', 'La Marzocco'),
-  ('machine_lelit_bianca', 'Lelit Bianca', 'Lelit'),
+  ('machine_ecm_sync', 'Synchronika', 'ECM'),
+  ('machine_lm_micra', 'Linea Micra', 'La Marzocco'),
+  ('machine_lm_levax', 'Leva X', 'La Marzocco'),
+  ('machine_lelit_bianca', 'Bianca', 'Lelit'),
   ('machine_breville_bambino', 'Bambino Plus', 'Breville');
 
 -- Grinders
 INSERT OR IGNORE INTO grinders (id, name, manufacturer) VALUES
-  ('grinder_niche_zero', 'Niche Zero', 'Niche'),
+  ('grinder_niche_zero', 'Zero', 'Niche'),
   ('grinder_df64', 'DF64', 'Turin'),
-  ('grinder_comandante', 'Comandante C40', 'Comandante'),
-  ('grinder_1zpresso_jx', '1Zpresso JX-Pro', '1Zpresso'),
-  ('grinder_eureka_mignon', 'Eureka Mignon Specialita', 'Eureka');
+  ('grinder_comandante', 'C40', 'Comandante'),
+  ('grinder_1zpresso_jx', 'JX-Pro', '1Zpresso'),
+  ('grinder_eureka_mignon', 'Mignon Specialita', 'Eureka');
 
 -- Beans
 INSERT OR IGNORE INTO beans (id, name, roaster, origin, roast_level, roaster_city, roaster_country, tasting_notes) VALUES

@@ -8,8 +8,8 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	if (q) {
 		const results = db
-			.prepare('SELECT * FROM grinders WHERE name LIKE ? ORDER BY name COLLATE NOCASE LIMIT 10')
-			.all(`%${q}%`);
+			.prepare('SELECT * FROM grinders WHERE name LIKE ? OR manufacturer LIKE ? OR (manufacturer || \' \' || name) LIKE ? ORDER BY name COLLATE NOCASE LIMIT 10')
+			.all(`%${q}%`, `%${q}%`, `%${q}%`);
 		return json(results);
 	}
 

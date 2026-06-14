@@ -2,10 +2,10 @@
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
 	import EquipmentAutocomplete from '$lib/components/EquipmentAutocomplete.svelte';
+	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const bean = data.bean as unknown as { id: string; name: string };
-	let showAdvanced = $state(false);
 </script>
 
 <div class="container">
@@ -23,6 +23,7 @@
 				name="dripper"
 				endpoint="/api/drippers"
 				placeholder="Search drippers..."
+				required
 			/>
 
 			<div class="form-row">
@@ -31,19 +32,19 @@
 					<input type="number" id="dose_grams" name="dose_grams" step="0.1" required placeholder="15.0" />
 				</div>
 				<div class="form-group">
-					<label for="water_grams">Water (g)</label>
-					<input type="number" id="water_grams" name="water_grams" step="1" placeholder="250" />
+					<label for="water_grams">Water (g) *</label>
+					<input type="number" id="water_grams" name="water_grams" step="1" required placeholder="250" />
 				</div>
 			</div>
 
 			<div class="form-row">
 				<div class="form-group">
-					<label for="total_time_seconds">Total Time (seconds)</label>
-					<input type="number" id="total_time_seconds" name="total_time_seconds" step="1" placeholder="180" />
+					<label for="total_time_seconds">Total Time (seconds) *</label>
+					<input type="number" id="total_time_seconds" name="total_time_seconds" step="1" required placeholder="180" />
 				</div>
 				<div class="form-group">
-					<label for="rating">Rating (1-10)</label>
-					<input type="number" id="rating" name="rating" min="1" max="10" step="0.5" placeholder="8" />
+					<label for="rating">Rating (1-10) *</label>
+					<input type="number" id="rating" name="rating" min="1" max="10" step="0.5" required placeholder="8" />
 				</div>
 			</div>
 
@@ -52,24 +53,21 @@
 				name="grinder"
 				endpoint="/api/grinders"
 				placeholder="Search grinders..."
+				optional
 			/>
 
 			<div class="form-group">
-				<label for="grind_setting">Grind Setting</label>
+				<label for="grind_setting">Grind Setting <span class="optional-label">(optional)</span></label>
 				<input type="text" id="grind_setting" name="grind_setting" placeholder="e.g. 24, medium-fine" />
 			</div>
 
 			<div class="form-group">
-				<label for="tasting_notes">Tasting Notes</label>
-				<textarea id="tasting_notes" name="tasting_notes" rows="2" placeholder="How did it taste?"></textarea>
+				<label for="tasting_notes">Tasting Notes *</label>
+				<textarea id="tasting_notes" name="tasting_notes" rows="2" required placeholder="How did it taste?"></textarea>
 			</div>
 		</div>
 
-		<button type="button" class="btn btn-secondary toggle-btn" onclick={() => (showAdvanced = !showAdvanced)}>
-			{showAdvanced ? 'Hide' : 'Show'} advanced fields
-		</button>
-
-		{#if showAdvanced}
+		<AdvancedToggle>
 			<div class="form-section">
 				<h2>Advanced</h2>
 
@@ -137,44 +135,14 @@
 					<input type="text" id="submitted_by" name="submitted_by" placeholder="Anonymous" />
 				</div>
 			</div>
-		{/if}
+		</AdvancedToggle>
 
 		<button type="submit" class="btn btn-primary">Submit Recipe</button>
 	</form>
 </div>
 
 <style>
-	.breadcrumb {
-		font-size: 0.9rem;
-		color: var(--color-text-muted);
-		margin-bottom: 0.5rem;
-	}
-
 	h1 {
 		margin-bottom: 1.5rem;
-	}
-
-	.brew-form {
-		max-width: 600px;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.form-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.form-section h2 {
-		font-size: 1rem;
-		color: var(--color-text-muted);
-		border-bottom: 1px solid var(--color-border-light);
-		padding-bottom: 0.5rem;
-	}
-
-	.toggle-btn {
-		align-self: flex-start;
 	}
 </style>

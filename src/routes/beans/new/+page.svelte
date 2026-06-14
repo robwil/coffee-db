@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { ORIGINS, ROAST_LEVELS } from '$lib/types';
-
-	let showAdvanced = $state(false);
+	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 </script>
 
 <div class="container">
 	<h1>Add a New Bean</h1>
 
-	<form method="POST" use:enhance class="bean-form">
+	<form method="POST" use:enhance class="brew-form">
 		<div class="form-section">
 			<h2>Core Info</h2>
 			<div class="form-group">
@@ -54,11 +53,7 @@
 			</div>
 		</div>
 
-		<button type="button" class="btn btn-secondary toggle-btn" onclick={() => (showAdvanced = !showAdvanced)}>
-			{showAdvanced ? 'Hide' : 'Show'} advanced fields
-		</button>
-
-		{#if showAdvanced}
+		<AdvancedToggle>
 			<div class="form-section">
 				<h2>Advanced Info</h2>
 				<div class="form-row">
@@ -103,7 +98,7 @@
 					<input type="text" id="submitted_by" name="submitted_by" placeholder="Anonymous" />
 				</div>
 			</div>
-		{/if}
+		</AdvancedToggle>
 
 		<button type="submit" class="btn btn-primary">Add Bean</button>
 	</form>
@@ -112,29 +107,5 @@
 <style>
 	h1 {
 		margin-bottom: 1.5rem;
-	}
-
-	.bean-form {
-		max-width: 600px;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.form-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.form-section h2 {
-		font-size: 1rem;
-		color: var(--color-text-muted);
-		border-bottom: 1px solid var(--color-border-light);
-		padding-bottom: 0.5rem;
-	}
-
-	.toggle-btn {
-		align-self: flex-start;
 	}
 </style>

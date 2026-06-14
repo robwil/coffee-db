@@ -84,6 +84,6 @@ export const actions: Actions = {
 			submittedBy
 		);
 
-		throw redirect(303, `/beans/${params.id}`);
+		throw redirect(303, `/beans/${params.id}?tab=pourover`);
 	}
 };

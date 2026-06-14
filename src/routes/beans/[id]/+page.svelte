@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import { ROAST_LEVELS, type Bean } from '$lib/types';
 	import BrewCard from '$lib/components/BrewCard.svelte';
@@ -7,7 +8,8 @@
 
 	const bean = $derived(data.bean as unknown as Bean);
 
-	let activeTab = $state<'espresso' | 'pourover'>('espresso');
+	const initialTab = page.url.searchParams.get('tab') === 'pourover' ? 'pourover' : 'espresso';
+	let activeTab = $state<'espresso' | 'pourover'>(initialTab);
 
 	const roastLabel = $derived(
 		ROAST_LEVELS.find((r) => r.value === bean.roast_level)?.label ?? null
