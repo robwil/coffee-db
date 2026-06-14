@@ -27,6 +27,31 @@
 		return isProse ? { type: 'prose' as const, text } : { type: 'pills' as const, notes: parts };
 	});
 
+	const details = $derived.by(() => {
+		const parts: string[] = [];
+		if (brew.days_rested != null) parts.push(`${brew.days_rested}d rested`);
+		if (brew.burr_set) parts.push(brew.burr_set);
+		if (type === 'espresso') {
+			if (brew.basket) parts.push(brew.basket);
+			if (brew.pressure_profile) parts.push(brew.pressure_profile);
+		}
+		if (type === 'pourover') {
+			if (brew.filter_type) parts.push(`${brew.filter_type} filter`);
+			if (brew.kettle) parts.push(brew.kettle);
+			if (brew.bloom_time_seconds || brew.bloom_water_grams) {
+				const bloom = [
+					brew.bloom_time_seconds ? formatTime(brew.bloom_time_seconds) : null,
+					brew.bloom_water_grams ? `${brew.bloom_water_grams}g` : null
+				].filter(Boolean).join(' / ');
+				parts.push(`bloom ${bloom}`);
+			}
+			if (brew.pour_count) parts.push(`${brew.pour_count} pours`);
+			if (brew.pour_technique) parts.push(brew.pour_technique);
+		}
+		if (brew.additional_notes) parts.push(brew.additional_notes);
+		return parts.length ? parts : null;
+	});
+
 	function formatTime(seconds: number | null): string {
 		if (!seconds) return '';
 		const m = Math.floor(seconds / 60);
@@ -50,7 +75,10 @@
 				<span class="recipe-ratio">{ratio}</span>
 			{/if}
 			{#if brew.total_time_seconds}
-				<span class="recipe-time">{formatTime(brew.total_time_seconds)}</span>
+				<span class="recipe-time">🕐 {formatTime(brew.total_time_seconds)}{#if brew.preinfusion_time_seconds && type === 'espresso'}{' '}({formatTime(brew.preinfusion_time_seconds)} pre){/if}</span>
+			{/if}
+			{#if brew.water_temp_c}
+				<span class="recipe-temp">🌡️ {brew.water_temp_c}°C</span>
 			{/if}
 		</div>
 		<div class="brew-equipment">
@@ -62,9 +90,6 @@
 			{/if}
 			{#if brew.grinder_name}
 				<span class="pill">⚙ {brew.grinder_manufacturer ? `${brew.grinder_manufacturer} ${brew.grinder_name}` : brew.grinder_name}{brew.grind_setting ? ` @ ${brew.grind_setting}` : ''}</span>
-			{/if}
-			{#if brew.preinfusion_time_seconds && type === 'espresso'}
-				<span class="pill">💧 Pre-infusion {formatTime(brew.preinfusion_time_seconds)}</span>
 			{/if}
 		</div>
 	</div>
@@ -98,6 +123,10 @@
 		{:else}
 			<p class="brew-notes-prose">{tastingNotes.text}</p>
 		{/if}
+	{/if}
+
+	{#if details}
+		<p class="brew-details">{details.join(' · ')}</p>
 	{/if}
 
 </div>
@@ -150,6 +179,11 @@
 	}
 
 	.recipe-time {
+		color: var(--color-text-muted);
+		font-size: 0.95rem;
+	}
+
+	.recipe-temp {
 		color: var(--color-text-muted);
 		font-size: 0.95rem;
 	}
@@ -246,6 +280,12 @@
 		font-size: 0.85rem;
 		font-style: italic;
 		color: var(--color-accent);
+		padding-right: 8rem;
+	}
+
+	.brew-details {
+		font-size: 0.78rem;
+		color: var(--color-text-muted);
 		padding-right: 8rem;
 	}
 
