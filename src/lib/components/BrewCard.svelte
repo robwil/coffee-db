@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { format } from 'timeago.js';
+
 	let { brew, type }: { brew: any; type: 'espresso' | 'pourover' } = $props();
 
 	const ratio = $derived(
@@ -10,6 +12,20 @@
 				? `1:${(brew.water_grams / brew.dose_grams).toFixed(1)}`
 				: null
 	);
+
+	const timeAgo = $derived(brew.created_at ? format(brew.created_at) : null);
+	const fullTimestamp = $derived(
+		brew.created_at ? new Date(brew.created_at).toLocaleString() : null
+	);
+
+	const tastingNotes = $derived.by(() => {
+		if (!brew.tasting_notes) return null;
+		const text = brew.tasting_notes.trim();
+		const parts = text.split(',').map((s: string) => s.trim()).filter(Boolean);
+		const avgWords = parts.reduce((sum: number, p: string) => sum + p.split(/\s+/).length, 0) / parts.length;
+		const isProse = avgWords > 3;
+		return isProse ? { type: 'prose' as const, text } : { type: 'pills' as const, notes: parts };
+	});
 
 	function formatTime(seconds: number | null): string {
 		if (!seconds) return '';
@@ -37,6 +53,20 @@
 				<span class="recipe-time">{formatTime(brew.total_time_seconds)}</span>
 			{/if}
 		</div>
+		<div class="brew-equipment">
+			{#if type === 'espresso' && brew.machine_name}
+				<span class="pill">☕ {brew.machine_manufacturer ? `${brew.machine_manufacturer} ${brew.machine_name}` : brew.machine_name}</span>
+			{/if}
+			{#if type === 'pourover' && brew.dripper_name}
+				<span class="pill">☕ {brew.dripper_manufacturer ? `${brew.dripper_manufacturer} ${brew.dripper_name}` : brew.dripper_name}</span>
+			{/if}
+			{#if brew.grinder_name}
+				<span class="pill">⚙ {brew.grinder_manufacturer ? `${brew.grinder_manufacturer} ${brew.grinder_name}` : brew.grinder_name}{brew.grind_setting ? ` @ ${brew.grind_setting}` : ''}</span>
+			{/if}
+			{#if brew.preinfusion_time_seconds && type === 'espresso'}
+				<span class="pill">💧 Pre-infusion {formatTime(brew.preinfusion_time_seconds)}</span>
+			{/if}
+		</div>
 	</div>
 
 	<span class="meta-chip">
@@ -49,32 +79,25 @@
 				</span>
 				<span class="rating-number">{brew.rating}/10</span>
 			</span>
-			<hr class="chip-divider" />
 		{/if}
-		<span class="author-name">by {brew.submitted_by ?? 'Anonymous'}</span>
+		<span class="chip-bottom">
+			<span class="author-name">by {brew.submitted_by ?? 'Anonymous'}</span>
+			{#if timeAgo}
+				<span class="time-ago" title={fullTimestamp}>{timeAgo}</span>
+			{/if}
+		</span>
 	</span>
 
-	<div class="brew-pills">
-		{#if type === 'espresso' && brew.machine_name}
-			<span class="pill">☕ {brew.machine_manufacturer ? `${brew.machine_manufacturer} ${brew.machine_name}` : brew.machine_name}</span>
+	{#if tastingNotes}
+		{#if tastingNotes.type === 'pills'}
+			<div class="brew-notes">
+				{#each tastingNotes.notes as note}
+					<span class="note-pill">{note}</span>
+				{/each}
+			</div>
+		{:else}
+			<p class="brew-notes-prose">{tastingNotes.text}</p>
 		{/if}
-		{#if type === 'pourover' && brew.dripper_name}
-			<span class="pill">☕ {brew.dripper_manufacturer ? `${brew.dripper_manufacturer} ${brew.dripper_name}` : brew.dripper_name}</span>
-		{/if}
-		{#if brew.grinder_name}
-			<span class="pill">⚙ {brew.grinder_manufacturer ? `${brew.grinder_manufacturer} ${brew.grinder_name}` : brew.grinder_name}{brew.grind_setting ? ` @ ${brew.grind_setting}` : ''}</span>
-		{/if}
-		{#if brew.preinfusion_time_seconds && type === 'espresso'}
-			<span class="pill">💧 Pre-infusion {formatTime(brew.preinfusion_time_seconds)}</span>
-		{/if}
-	</div>
-
-	{#if brew.tasting_notes}
-		<div class="brew-notes-row">
-			{#each brew.tasting_notes.split(',').map((n: string) => n.trim()).filter(Boolean) as note}
-				<span class="note-pill">{note}</span>
-			{/each}
-		</div>
 	{/if}
 
 </div>
@@ -84,6 +107,12 @@
 		transition: none;
 		position: relative;
 		overflow: hidden;
+		padding-top: 0.7rem;
+		padding-bottom: 0.7rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		min-height: 4.5rem;
 	}
 
 	.brew-card:hover {
@@ -94,6 +123,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		padding-right: 8rem;
 	}
 
 	.brew-recipe {
@@ -127,16 +157,16 @@
 	.meta-chip {
 		position: absolute;
 		top: -1px;
+		bottom: -1px;
 		right: -1px;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
-		gap: 0.15rem;
-		padding: 0.35rem 0.6rem;
+		justify-content: space-between;
+		padding: 0.45rem 0.6rem;
 		background: var(--color-border-light);
-		border-bottom: 1px solid var(--color-border);
 		border-left: 1px solid var(--color-border);
-		border-radius: 0 var(--radius-lg) 0 var(--radius);
+		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 	}
 
 	.rating-row {
@@ -168,11 +198,10 @@
 		color: var(--color-rating);
 	}
 
-	.chip-divider {
-		width: 100%;
-		border: none;
-		border-top: 1px solid var(--color-border);
-		margin: 0;
+	.chip-bottom {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 	}
 
 	.author-name {
@@ -180,11 +209,18 @@
 		color: var(--color-text-muted);
 	}
 
-	.brew-pills {
+	.time-ago {
+		font-size: 0.62rem;
+		color: var(--color-text-muted);
+		opacity: 0.7;
+		cursor: default;
+	}
+
+	.brew-equipment {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin-top: 0.75rem;
+		gap: 0.3rem;
+		justify-content: flex-end;
 	}
 
 	.pill {
@@ -199,11 +235,18 @@
 		border: 1px solid var(--color-border);
 	}
 
-	.brew-notes-row {
+	.brew-notes {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem;
-		margin-top: 0.5rem;
+		gap: 0.3rem;
+		padding-right: 8rem;
+	}
+
+	.brew-notes-prose {
+		font-size: 0.85rem;
+		font-style: italic;
+		color: var(--color-accent);
+		padding-right: 8rem;
 	}
 
 	.note-pill {

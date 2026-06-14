@@ -36,21 +36,17 @@
 				<span class="tag">{bean.origin}</span>
 			{/if}
 			{#if roastLabel}
-				<span class="tag">{roastLabel}</span>
+				<span class="tag">Roast: {roastLabel}</span>
 			{/if}
 			{#if bean.caffeine && bean.caffeine !== 'full'}
 				<span class="tag">{bean.caffeine}</span>
 			{/if}
-		</div>
-
-		{#if bean.tasting_notes}
-			<p class="tasting-notes-label">Roaster Tasting Notes</p>
-			<div class="tasting-notes-row">
+			{#if bean.tasting_notes}
 				{#each bean.tasting_notes.split(',').map((n: string) => n.trim()).filter(Boolean) as note}
 					<span class="note-pill">{note}</span>
 				{/each}
-			</div>
-		{/if}
+			{/if}
+		</div>
 
 		{#if bean.price && bean.weight_grams}
 			<p class="price">
@@ -126,20 +122,6 @@
 		display: flex;
 		gap: 0.35rem;
 		margin-top: 0.75rem;
-	}
-
-	.tasting-notes-label {
-		margin-top: 0.75rem;
-		font-size: 0.8rem;
-		font-weight: 500;
-		color: var(--color-text-muted);
-	}
-
-	.tasting-notes-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-		margin-top: 0.35rem;
 	}
 
 	.note-pill {
