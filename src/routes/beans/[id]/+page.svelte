@@ -43,7 +43,11 @@
 
 		{#if bean.tasting_notes}
 			<p class="tasting-notes-label">Roaster Tasting Notes</p>
-			<p class="tasting-notes">{bean.tasting_notes}</p>
+			<div class="tasting-notes-row">
+				{#each bean.tasting_notes.split(',').map((n: string) => n.trim()).filter(Boolean) as note}
+					<span class="note-pill">{note}</span>
+				{/each}
+			</div>
 		{/if}
 
 		{#if bean.price && bean.weight_grams}
@@ -129,10 +133,22 @@
 		color: var(--color-text-muted);
 	}
 
-	.tasting-notes {
-		margin-top: 0.2rem;
+	.tasting-notes-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		margin-top: 0.35rem;
+	}
+
+	.note-pill {
+		display: inline-block;
+		padding: 0.2rem 0.6rem;
+		border-radius: 999px;
+		font-size: 0.78rem;
 		font-style: italic;
-		color: var(--color-text-muted);
+		background: rgba(201, 123, 58, 0.1);
+		color: var(--color-accent);
+		border: 1px solid rgba(201, 123, 58, 0.2);
 	}
 
 	.price {
