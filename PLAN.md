@@ -97,7 +97,7 @@ CREATE TABLE beans (
 );
 ```
 
-**Core fields (always visible):** `name`, `roaster`, `origin`, `roast_level`, `roaster_country`
+**Core fields (always visible):** `name`, `roaster`, `origin`, `roast_level`, `roaster_country`, `tasting_notes`
 **Advanced fields (behind toggle):** everything else
 
 Note: `origin` is presented as a dropdown of common coffee-producing countries (Ethiopia, Colombia, Brazil, Kenya, Guatemala, etc.) with "Blend" and "Other" options for data cleanliness. `weight_grams` and `price` reflect a single bag size chosen by the submitter — different bag sizes (250g, 500g, 1kg) at different price points are expected; submitters pick whichever they purchased.
@@ -342,3 +342,27 @@ src/
 - Confirm seed data displays correctly
 - Test core/advanced toggle shows/hides correct fields
 - Deploy to Cloudflare Pages and verify Turso connection works at the edge
+
+---
+
+## Follow-Up Items
+
+Items deferred during initial implementation — not blockers, but worth addressing before deployment.
+
+1. **FTS search** — Currently using `LIKE %q%` for bean search instead of the FTS5 virtual table described in the schema. The `beans_fts` table creation and sync-on-insert logic need to be wired up. LIKE is fine for small datasets but won't scale.
+
+2. **Cloudflare Turnstile integration** — All submission forms (add bean, espresso brew, pourover brew) should verify a Turnstile token before accepting writes. Skipped for local dev — needs env vars and the Turnstile client-side widget.
+
+3. **Turso / libSQL migration** — Currently using `better-sqlite3` for local dev. Before deploying to Cloudflare Pages, swap to `@libsql/client` and wire up Turso connection via env vars (`TURSO_URL`, `TURSO_AUTH_TOKEN`). The DB abstraction in `db.ts` makes this a straightforward swap.
+
+4. **Cloudflare Pages adapter** — Using `@sveltejs/adapter-auto` currently. Swap to `@sveltejs/adapter-cloudflare` for deployment.
+
+5. **Bean dedup UX** — The plan calls for fuzzy-match suggestions when adding a new bean ("Did you mean one of these?"). Currently the add-bean form is standalone without live suggestions. The search API exists but isn't wired into the add-bean flow.
+
+6. **Error handling on forms** — Form actions return `fail(400, ...)` but the Svelte pages don't display the error message to the user. Need to wire up `form` prop from `use:enhance` to show validation errors.
+
+7. **Loading states** — No loading indicators on search autocomplete or page transitions. Minor for MVP but good polish.
+
+8. **Responsive testing** — CSS uses responsive breakpoints but hasn't been tested on actual mobile viewports.
+
+9. **Node version compatibility** — Scaffold requires Node ^20.19 || ^22.12 || >=24 but currently running on Node 23.6 with `--force`. Pin to a supported version or wait for compatibility update.

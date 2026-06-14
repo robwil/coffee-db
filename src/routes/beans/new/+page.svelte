@@ -47,6 +47,11 @@
 					<input type="text" id="roaster_country" name="roaster_country" placeholder="e.g. United States" />
 				</div>
 			</div>
+
+			<div class="form-group">
+				<label for="tasting_notes">Roaster Tasting Notes</label>
+				<textarea id="tasting_notes" name="tasting_notes" rows="2" placeholder="e.g. Blueberry, jasmine, dark chocolate"></textarea>
+			</div>
 		</div>
 
 		<button type="button" class="btn btn-secondary toggle-btn" onclick={() => (showAdvanced = !showAdvanced)}>
@@ -91,11 +96,6 @@
 						<label for="product_url">Product URL</label>
 						<input type="url" id="product_url" name="product_url" placeholder="https://..." />
 					</div>
-				</div>
-
-				<div class="form-group">
-					<label for="tasting_notes">Tasting Notes</label>
-					<textarea id="tasting_notes" name="tasting_notes" rows="2" placeholder="e.g. Blueberry, jasmine, dark chocolate"></textarea>
 				</div>
 
 				<div class="form-group">

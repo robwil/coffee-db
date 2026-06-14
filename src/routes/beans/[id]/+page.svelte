@@ -42,6 +42,7 @@
 		</div>
 
 		{#if bean.tasting_notes}
+			<p class="tasting-notes-label">Roaster Tasting Notes</p>
 			<p class="tasting-notes">{bean.tasting_notes}</p>
 		{/if}
 
@@ -121,8 +122,15 @@
 		margin-top: 0.75rem;
 	}
 
-	.tasting-notes {
+	.tasting-notes-label {
 		margin-top: 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--color-text-muted);
+	}
+
+	.tasting-notes {
+		margin-top: 0.2rem;
 		font-style: italic;
 		color: var(--color-text-muted);
 	}
