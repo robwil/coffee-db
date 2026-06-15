@@ -6,14 +6,25 @@ Community espresso and pourover recipes for every bean. A public web app for tra
 
 ```sh
 npm install
+
+# Start the local database server (serves data/coffee.db over HTTP)
+turso dev --db-file data/coffee.db
+
+# In another terminal
 npm run dev
 ```
 
-The app uses a local SQLite database at `data/coffee.db`, created and seeded automatically on first run.
+Install the Turso CLI with `brew install tursodatabase/tap/turso` if you don't have it.
+
+The local dev server uses the SQLite file at `data/coffee.db`. Schema and seed data are applied automatically on startup. To connect to a remote Turso database instead, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env`.
+
+## Deployment
+
+See [docs/infrastructure.md](docs/infrastructure.md) for full Cloudflare Pages + Turso setup instructions.
 
 ## Tech Stack
 
 - **Framework:** SvelteKit
-- **Database:** SQLite (better-sqlite3 for local dev, Turso for production)
-- **Hosting:** Cloudflare Pages (planned)
+- **Database:** Turso (libSQL/SQLite)
+- **Hosting:** Cloudflare Pages
 - **Bot protection:** Cloudflare Turnstile (planned)
