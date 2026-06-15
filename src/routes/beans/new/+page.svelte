@@ -3,6 +3,9 @@
 	import { ORIGINS, ROAST_LEVELS } from '$lib/types';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 	import Turnstile from '$lib/components/Turnstile.svelte';
+	import BeanSuggestions from '$lib/components/BeanSuggestions.svelte';
+
+	let beanName = $state('');
 </script>
 
 <div class="container">
@@ -13,7 +16,8 @@
 			<h2>Core Info</h2>
 			<div class="form-group">
 				<label for="name">Bean Name *</label>
-				<input type="text" id="name" name="name" required placeholder="e.g. Chelchele" />
+				<input type="text" id="name" name="name" required placeholder="e.g. Chelchele" bind:value={beanName} />
+				<BeanSuggestions query={beanName} />
 			</div>
 
 			<div class="form-row">
