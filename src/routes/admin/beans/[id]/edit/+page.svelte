@@ -5,7 +5,7 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	const bean = data.bean as Record<string, unknown>;
+	const bean = $derived(data.bean as Record<string, unknown>);
 </script>
 
 <div class="container">

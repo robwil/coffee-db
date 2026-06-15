@@ -5,9 +5,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const machines = data.filters.machines as unknown as Machine[];
-	const grinders = data.filters.grinders as unknown as Grinder[];
-	const drippers = data.filters.drippers as unknown as Dripper[];
+	const machines = $derived(data.filters.machines as unknown as Machine[]);
+	const grinders = $derived(data.filters.grinders as unknown as Grinder[]);
+	const drippers = $derived(data.filters.drippers as unknown as Dripper[]);
 
 	function buildUrl(param: string, value: string | null): string {
 		const params = new URLSearchParams();

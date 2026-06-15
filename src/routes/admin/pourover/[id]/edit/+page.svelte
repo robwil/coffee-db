@@ -5,7 +5,7 @@
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 
 	let { data }: { data: PageData } = $props();
-	const brew = data.brew as Record<string, unknown>;
+	const brew = $derived(data.brew as Record<string, unknown>);
 </script>
 
 <div class="container">

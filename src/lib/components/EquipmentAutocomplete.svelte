@@ -19,9 +19,12 @@
 		initialName?: string;
 	} = $props();
 
+	// svelte-ignore state_referenced_locally
 	let query = $state(initialName);
 	let results = $state<any[]>([]);
+	// svelte-ignore state_referenced_locally
 	let selectedId = $state(initialId);
+	// svelte-ignore state_referenced_locally
 	let selectedName = $state(initialName);
 	let manufacturer = $state('');
 	let showDropdown = $state(false);
@@ -106,11 +109,12 @@
 		required={required}
 		autocomplete="off"
 		role="combobox"
+		aria-controls="{name}-listbox"
 		aria-expanded={showDropdown && results.length > 0}
 		aria-activedescendant={highlightIndex >= 0 ? `${name}-option-${highlightIndex}` : undefined}
 	/>
 	{#if showDropdown && results.length > 0}
-		<div class="dropdown" role="listbox">
+		<div class="dropdown" role="listbox" id="{name}-listbox">
 			{#each results as item, i}
 				<button
 					type="button"

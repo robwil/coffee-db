@@ -26,6 +26,7 @@
 
 	let { children, startOpen = false }: { children: any; startOpen?: boolean } = $props();
 
+	// svelte-ignore state_referenced_locally
 	if (startOpen) {
 		manualToggle = true;
 	}

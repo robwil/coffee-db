@@ -5,7 +5,7 @@
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 
 	let { data }: { data: PageData } = $props();
-	const bean = data.bean as unknown as { id: string; name: string };
+	const bean = $derived(data.bean as unknown as { id: string; name: string });
 </script>
 
 <div class="container">
