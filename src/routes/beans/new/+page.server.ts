@@ -1,10 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
+import { verifyTurnstile } from '$lib/server/turnstile';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
 	default: async ({ request }) => {
 		const form = await request.formData();
+
+		const turnstileToken = form.get('cf-turnstile-response')?.toString() || null;
+		if (!(await verifyTurnstile(turnstileToken))) {
+			return fail(400, { error: 'Bot verification failed. Please try again.' });
+		}
 
 		const name = form.get('name')?.toString().trim();
 		if (!name) return fail(400, { error: 'Bean name is required' });

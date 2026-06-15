@@ -2,17 +2,30 @@
 	import { enhance } from '$app/forms';
 	import { ORIGINS, ROAST_LEVELS } from '$lib/types';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
+	import Turnstile from '$lib/components/Turnstile.svelte';
+	import BeanSuggestions from '$lib/components/BeanSuggestions.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import type { ActionData } from './$types';
+
+	let { form }: { form: ActionData } = $props();
+	let beanName = $state('');
+	let submitting = $state(false);
 </script>
 
 <div class="container">
 	<h1>Add a New Bean</h1>
 
-	<form method="POST" use:enhance class="brew-form">
+	{#if form?.error}
+		<div class="form-error" role="alert">{form.error}</div>
+	{/if}
+
+	<form method="POST" use:enhance={() => { submitting = true; return async ({ update }) => { submitting = false; await update(); }; }} class="brew-form">
 		<div class="form-section">
 			<h2>Core Info</h2>
 			<div class="form-group">
 				<label for="name">Bean Name *</label>
-				<input type="text" id="name" name="name" required placeholder="e.g. Chelchele" />
+				<input type="text" id="name" name="name" required placeholder="e.g. Chelchele" bind:value={beanName} />
+				<BeanSuggestions query={beanName} />
 			</div>
 
 			<div class="form-row">
@@ -100,7 +113,11 @@
 			</div>
 		</AdvancedToggle>
 
-		<button type="submit" class="btn btn-primary">Add Bean</button>
+		<Turnstile />
+		<button type="submit" class="btn btn-primary" disabled={submitting}>
+			{#if submitting}<Spinner size="0.9rem" />{/if}
+			Add Bean
+		</button>
 	</form>
 </div>
 

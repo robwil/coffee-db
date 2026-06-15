@@ -28,6 +28,13 @@ export async function initSchema(): Promise<void> {
 
 	const schema = readFileSync(join(__dir, 'schema.sql'), 'utf-8');
 	await db.executeMultiple(schema);
+
+	// Backfill FTS index for any beans not yet indexed
+	await db.execute({
+		sql: `INSERT OR IGNORE INTO beans_fts(rowid, name, roaster, origin, tasting_notes)
+			  SELECT rowid, name, roaster, origin, tasting_notes FROM beans`,
+		args: []
+	});
 }
 
 export async function seedDb(): Promise<void> {

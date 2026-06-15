@@ -349,20 +349,12 @@ src/
 
 Items deferred during initial implementation — not blockers, but worth addressing before deployment.
 
-1. **FTS search** — Currently using `LIKE %q%` for bean search instead of the FTS5 virtual table described in the schema. The `beans_fts` table creation and sync-on-insert logic need to be wired up. LIKE is fine for small datasets but won't scale.
-
-2. **Cloudflare Turnstile integration** — All submission forms (add bean, espresso brew, pourover brew) should verify a Turnstile token before accepting writes. Skipped for local dev — needs env vars and the Turnstile client-side widget.
-
-3. **Turso / libSQL migration** — Currently using `better-sqlite3` for local dev. Before deploying to Cloudflare Pages, swap to `@libsql/client` and wire up Turso connection via env vars (`TURSO_URL`, `TURSO_AUTH_TOKEN`). The DB abstraction in `db.ts` makes this a straightforward swap.
-
-4. **Cloudflare Pages adapter** — Using `@sveltejs/adapter-auto` currently. Swap to `@sveltejs/adapter-cloudflare` for deployment.
-
-5. **Bean dedup UX** — The plan calls for fuzzy-match suggestions when adding a new bean ("Did you mean one of these?"). Currently the add-bean form is standalone without live suggestions. The search API exists but isn't wired into the add-bean flow.
-
-6. **Error handling on forms** — Form actions return `fail(400, ...)` but the Svelte pages don't display the error message to the user. Need to wire up `form` prop from `use:enhance` to show validation errors.
-
-7. **Loading states** — No loading indicators on search autocomplete or page transitions. Minor for MVP but good polish.
-
-8. **Responsive testing** — CSS uses responsive breakpoints but hasn't been tested on actual mobile viewports.
-
-9. **Node version compatibility** — Scaffold requires Node ^20.19 || ^22.12 || >=24 but currently running on Node 23.6 with `--force`. Pin to a supported version or wait for compatibility update.
+1. **FTS search** — → Addressed in `2_follow_ups.md`
+2. **Cloudflare Turnstile integration** — → Addressed in `2_follow_ups.md`
+3. **Turso / libSQL migration** — ✅ Already done (using `@libsql/client`)
+4. **Cloudflare Pages adapter** — ✅ Already done (using `adapter-cloudflare`)
+5. **Bean dedup UX** — → Addressed in `2_follow_ups.md`
+6. **Error handling on forms** — → Addressed in `2_follow_ups.md`
+7. **Loading states** — → Addressed in `2_follow_ups.md`
+8. **Responsive testing** — ✅ Already done (mobile fixes implemented)
+9. **Node version compatibility** — → Addressed in `2_follow_ups.md`

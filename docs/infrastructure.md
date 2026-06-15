@@ -57,7 +57,21 @@ Admin features (edit/delete brews) require Google sign-in, restricted to an emai
    - Production: `https://your-domain.com/auth/callback/google`
 7. Copy the **Client ID** and **Client secret**
 
-## 4. Set up environment variables
+## 4. Create Cloudflare Turnstile keys
+
+Turnstile protects the public submission forms (add bean, espresso recipe, pourover recipe) from bots.
+
+1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com) > **Turnstile** (in the left sidebar)
+2. Click **Add site**
+3. Enter a site name (e.g. "Coffee DB") and your domain(s)
+4. Widget mode: **Managed** (recommended — Cloudflare decides when to show a challenge)
+5. Copy the **Site Key** and **Secret Key**
+
+For local development, you can use Cloudflare's always-passes test keys instead (already in `.env.example`):
+- Site key: `1x00000000000000000000AA`
+- Secret key: `1x0000000000000000000000000000000AA`
+
+## 5. Set up environment variables
 
 Create a `.env` file for local development:
 
@@ -75,6 +89,9 @@ AUTH_SECRET=<run: openssl rand -base64 33>
 AUTH_GOOGLE_ID=<client-id-from-step-3>
 AUTH_GOOGLE_SECRET=<client-secret-from-step-3>
 ADMIN_EMAILS=you@example.com
+
+PUBLIC_TURNSTILE_SITE_KEY=<site-key-from-step-4>
+TURNSTILE_SECRET_KEY=<secret-key-from-step-4>
 ```
 
 `ADMIN_EMAILS` is a comma-separated list of Google emails allowed to sign in. Users not on the list are rejected at login.
@@ -94,7 +111,7 @@ TURSO_DATABASE_URL=http://127.0.0.1:8080
 
 (No auth token needed for the local dev server.)
 
-## 5. Initialize the remote database schema
+## 6. Initialize the remote database schema
 
 Push your schema and seed data to the remote Turso database:
 
@@ -113,7 +130,7 @@ sqlite3 data/coffee.db .dump > /tmp/coffee-dump.sql
 turso db shell coffee-db < /tmp/coffee-dump.sql
 ```
 
-## 6. Install dependencies
+## 7. Install dependencies
 
 The migration from `better-sqlite3` to `@libsql/client` has already been done in the codebase. Install the updated dependencies:
 
@@ -126,7 +143,7 @@ Key dependency changes:
 - **Added:** `@libsql/client` (works in both Node.js and Cloudflare Workers)
 - **Added:** `@sveltejs/adapter-cloudflare` (replaces `adapter-auto`)
 
-## 7. Run locally
+## 8. Run locally
 
 ```fish
 npm run dev
@@ -136,7 +153,7 @@ The app connects to whatever `TURSO_DATABASE_URL` points to in your `.env`. For 
 - Point at the remote Turso database (simplest — shared state, needs internet)
 - Run `turso dev --db-file data/coffee.db` and point at `http://127.0.0.1:8080` (offline-capable, uses your local data)
 
-## 8. Deploy to Cloudflare Pages
+## 9. Deploy to Cloudflare Pages
 
 ### First-time setup
 
@@ -170,6 +187,8 @@ wrangler pages secret put AUTH_SECRET
 wrangler pages secret put AUTH_GOOGLE_ID
 wrangler pages secret put AUTH_GOOGLE_SECRET
 wrangler pages secret put ADMIN_EMAILS
+wrangler pages secret put PUBLIC_TURNSTILE_SITE_KEY
+wrangler pages secret put TURNSTILE_SECRET_KEY
 
 # Preview (branch/PR deployments)
 wrangler pages secret put TURSO_AUTH_TOKEN --env preview
@@ -177,6 +196,8 @@ wrangler pages secret put AUTH_SECRET --env preview
 wrangler pages secret put AUTH_GOOGLE_ID --env preview
 wrangler pages secret put AUTH_GOOGLE_SECRET --env preview
 wrangler pages secret put ADMIN_EMAILS --env preview
+wrangler pages secret put PUBLIC_TURNSTILE_SITE_KEY --env preview
+wrangler pages secret put TURNSTILE_SECRET_KEY --env preview
 ```
 
 Each command prompts for the value interactively. Alternatively, use the dashboard where you can set secrets for both environments in one place (Settings > Environment variables — check both Production and Preview tabs).
@@ -189,7 +210,7 @@ If connected to Git, pushes to `main` trigger automatic deploys. For manual depl
 npm run build && npm run deploy
 ```
 
-## 9. Custom domain (optional)
+## 10. Custom domain (optional)
 
 In the Cloudflare dashboard, go to your Pages project > **Custom domains** > **Set up a custom domain**. If the domain is already on Cloudflare DNS, it provisions automatically.
 

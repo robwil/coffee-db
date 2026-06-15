@@ -1,15 +1,22 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import BeanCard from '$lib/components/BeanCard.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
+
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 	let searchQuery = $state('');
 	let searchResults = $state<any[]>([]);
 	let searching = $state(false);
+	let highlightIndex = $state(-1);
 	let searchTimeout: ReturnType<typeof setTimeout>;
+
+	const totalItems = $derived(searchResults.length > 0 ? searchResults.length + 1 : 0);
 
 	function handleSearch() {
 		clearTimeout(searchTimeout);
+		highlightIndex = -1;
 		if (!searchQuery.trim()) {
 			searchResults = [];
 			return;
@@ -20,6 +27,28 @@
 			searchResults = await res.json();
 			searching = false;
 		}, 250);
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (totalItems === 0) return;
+
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			highlightIndex = (highlightIndex + 1) % totalItems;
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			highlightIndex = highlightIndex <= 0 ? totalItems - 1 : highlightIndex - 1;
+		} else if (e.key === 'Enter' && highlightIndex >= 0) {
+			e.preventDefault();
+			if (highlightIndex < searchResults.length) {
+				goto(`/beans/${searchResults[highlightIndex].id}`);
+			} else {
+				goto('/beans/new');
+			}
+		} else if (e.key === 'Escape') {
+			searchResults = [];
+			highlightIndex = -1;
+		}
 	}
 </script>
 
@@ -34,12 +63,29 @@
 				placeholder="Search beans by name, roaster, or origin..."
 				bind:value={searchQuery}
 				oninput={handleSearch}
+				onkeydown={handleKeydown}
 				class="search-input"
+				role="combobox"
+				aria-controls="bean-search-listbox"
+				aria-expanded={searchResults.length > 0}
+				aria-activedescendant={highlightIndex >= 0 ? `bean-search-option-${highlightIndex}` : undefined}
 			/>
-			{#if searchResults.length > 0}
+			{#if searching}
 				<div class="search-dropdown">
-					{#each searchResults as bean}
-						<a href="/beans/{bean.id}" class="search-result">
+					<div class="search-result no-results"><Spinner size="0.9rem" /> Searching...</div>
+				</div>
+			{:else if searchResults.length > 0}
+				<div class="search-dropdown" role="listbox" id="bean-search-listbox">
+					{#each searchResults as bean, i}
+						<a
+							href="/beans/{bean.id}"
+							class="search-result"
+							class:highlighted={i === highlightIndex}
+							id="bean-search-option-{i}"
+							role="option"
+							aria-selected={i === highlightIndex}
+							onmouseenter={() => (highlightIndex = i)}
+						>
 							<strong>{bean.name}</strong>
 							{#if bean.roaster}
 								<span class="muted">by {bean.roaster}</span>
@@ -49,7 +95,15 @@
 							{/if}
 						</a>
 					{/each}
-					<a href="/beans/new" class="search-result add-new">
+					<a
+						href="/beans/new"
+						class="search-result add-new"
+						class:highlighted={highlightIndex === searchResults.length}
+						id="bean-search-option-{searchResults.length}"
+						role="option"
+						aria-selected={highlightIndex === searchResults.length}
+						onmouseenter={() => (highlightIndex = searchResults.length)}
+					>
 						+ Add a new bean
 					</a>
 				</div>
@@ -95,7 +149,7 @@
 <style>
 	.hero {
 		text-align: center;
-		padding: 3rem 0 2rem;
+		padding: 1.5rem 0 2rem;
 	}
 
 	h1 {
@@ -146,7 +200,8 @@
 		text-decoration: none;
 	}
 
-	.search-result:hover {
+	.search-result:hover,
+	.search-result.highlighted {
 		background: var(--color-border-light);
 		text-decoration: none;
 	}

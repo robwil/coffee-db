@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { resolveEquipment } from '$lib/server/equipment';
+import { verifyTurnstile } from '$lib/server/turnstile';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -17,6 +18,11 @@ export const load: PageServerLoad = async ({ params }) => {
 export const actions: Actions = {
 	default: async ({ request, params }) => {
 		const form = await request.formData();
+
+		const turnstileToken = form.get('cf-turnstile-response')?.toString() || null;
+		if (!(await verifyTurnstile(turnstileToken))) {
+			return fail(400, { error: 'Bot verification failed. Please try again.' });
+		}
 
 		const doseGrams = Number(form.get('dose_grams'));
 		const yieldGrams = Number(form.get('yield_grams'));
