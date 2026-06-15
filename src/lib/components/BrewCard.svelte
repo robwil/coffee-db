@@ -96,6 +96,22 @@
 		</div>
 	</div>
 
+	{#if tastingNotes}
+		{#if tastingNotes.type === 'pills'}
+			<div class="brew-notes">
+				{#each tastingNotes.notes as note}
+					<span class="note-pill">{note}</span>
+				{/each}
+			</div>
+		{:else}
+			<p class="brew-notes-prose">{tastingNotes.text}</p>
+		{/if}
+	{/if}
+
+	{#if details}
+		<p class="brew-details">{details.join(' · ')}</p>
+	{/if}
+
 	<span class="meta-chip">
 		{#if brew.rating}
 			<span class="rating-row">
@@ -114,23 +130,6 @@
 			{/if}
 		</span>
 	</span>
-
-	{#if tastingNotes}
-		{#if tastingNotes.type === 'pills'}
-			<div class="brew-notes">
-				{#each tastingNotes.notes as note}
-					<span class="note-pill">{note}</span>
-				{/each}
-			</div>
-		{:else}
-			<p class="brew-notes-prose">{tastingNotes.text}</p>
-		{/if}
-	{/if}
-
-	{#if details}
-		<p class="brew-details">{details.join(' · ')}</p>
-	{/if}
-
 </div>
 
 <style>
@@ -155,6 +154,15 @@
 		justify-content: space-between;
 		align-items: center;
 		padding-right: 8rem;
+	}
+
+	@media (max-width: 768px) {
+		.brew-header {
+			flex-direction: column;
+			align-items: flex-start;
+			padding-right: 0;
+			gap: 0.4rem;
+		}
 	}
 
 	.brew-recipe {
@@ -205,6 +213,23 @@
 		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 	}
 
+	@media (max-width: 768px) {
+		.meta-chip {
+			position: relative;
+			top: auto;
+			bottom: auto;
+			right: auto;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			border-left: none;
+			border-top: 1px solid var(--color-border);
+			border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+			margin: 0.2rem -1.25rem -0.7rem;
+			padding: 0.4rem 1.25rem;
+		}
+	}
+
 	.rating-row {
 		display: inline-flex;
 		align-items: center;
@@ -240,6 +265,14 @@
 		align-items: flex-end;
 	}
 
+	@media (max-width: 768px) {
+		.chip-bottom {
+			flex-direction: row;
+			align-items: center;
+			gap: 0.4rem;
+		}
+	}
+
 	.author-name {
 		font-size: 0.68rem;
 		color: var(--color-text-muted);
@@ -257,6 +290,12 @@
 		flex-wrap: wrap;
 		gap: 0.3rem;
 		justify-content: flex-end;
+	}
+
+	@media (max-width: 768px) {
+		.brew-equipment {
+			justify-content: flex-start;
+		}
 	}
 
 	.pill {
@@ -289,6 +328,14 @@
 		font-size: 0.78rem;
 		color: var(--color-text-muted);
 		padding-right: 8rem;
+	}
+
+	@media (max-width: 768px) {
+		.brew-notes,
+		.brew-notes-prose,
+		.brew-details {
+			padding-right: 0;
+		}
 	}
 
 	.note-pill {

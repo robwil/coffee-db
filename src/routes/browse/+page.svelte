@@ -37,10 +37,28 @@
 	const hasFilters = $derived(
 		Object.values(data.activeFilters).some((v) => v !== null)
 	);
+
+	const activeFilterCount = $derived(
+		Object.values(data.activeFilters).filter((v) => v !== null).length
+	);
 </script>
+
+<svelte:head>
+	<style>
+		@media (min-width: 769px) {
+			.filter-accordion { display: none !important; }
+			.filters { display: grid !important; }
+		}
+	</style>
+</svelte:head>
 
 <div class="container">
 	<h1>Browse Beans</h1>
+
+	<details class="filter-details">
+		<summary class="filter-accordion">
+			Filters{#if activeFilterCount > 0} <span class="filter-badge">{activeFilterCount}</span>{/if}
+		</summary>
 
 	<div class="filters">
 		<div class="filter-group">
@@ -158,6 +176,7 @@
 			<span class="result-count">{data.beans.length} result{data.beans.length !== 1 ? 's' : ''}</span>
 		</div>
 	{/if}
+	</details>
 
 	<div class="bean-grid">
 		{#each data.beans as bean}
@@ -171,6 +190,64 @@
 <style>
 	h1 {
 		margin-bottom: 1.5rem;
+	}
+
+	.filter-details {
+		margin-bottom: 1rem;
+	}
+
+	.filter-accordion {
+		display: none;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 0.95rem;
+		color: var(--color-primary);
+		padding: 0.5rem 0;
+		list-style: none;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.filter-accordion::-webkit-details-marker {
+		display: none;
+	}
+
+	.filter-accordion::before {
+		content: '▸';
+		display: inline-block;
+		transition: transform 0.15s ease;
+	}
+
+	.filter-details[open] > .filter-accordion::before {
+		transform: rotate(90deg);
+	}
+
+	.filter-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		padding: 0 0.35rem;
+		border-radius: 999px;
+		background: var(--color-primary);
+		color: white;
+		font-size: 0.72rem;
+		font-weight: 700;
+	}
+
+	@media (max-width: 768px) {
+		.filter-accordion {
+			display: flex;
+		}
+
+		.filters {
+			display: none;
+		}
+
+		.filter-details[open] .filters {
+			display: grid;
+		}
 	}
 
 	.filters {

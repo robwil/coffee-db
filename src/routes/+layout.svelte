@@ -62,6 +62,13 @@
 		gap: 1.5rem;
 	}
 
+	@media (max-width: 768px) {
+		.nav-links {
+			gap: 0.75rem;
+			font-size: 0.85rem;
+		}
+	}
+
 	.nav-auth {
 		background: none;
 		border: none;

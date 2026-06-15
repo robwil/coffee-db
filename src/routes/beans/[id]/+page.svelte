@@ -120,6 +120,7 @@
 
 	.bean-tags {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.35rem;
 		margin-top: 0.75rem;
 	}
