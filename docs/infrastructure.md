@@ -159,17 +159,27 @@ Alternatively, connect via the Cloudflare dashboard:
 
 `TURSO_DATABASE_URL` is set in `wrangler.toml` under `[vars]` — update the placeholder with your actual Turso URL.
 
-Secrets must be set via the dashboard (Settings > Environment variables > Add secret) or CLI. These are encrypted and not committed to source:
+Secrets must be set via the dashboard (Settings > Environment variables > Add secret) or CLI. These are encrypted and not committed to source.
 
-```fish
+**Important:** Secrets must be set separately for production and preview environments. The CLI defaults to production only.
+
+```bash
+# Production
 wrangler pages secret put TURSO_AUTH_TOKEN
 wrangler pages secret put AUTH_SECRET
 wrangler pages secret put AUTH_GOOGLE_ID
 wrangler pages secret put AUTH_GOOGLE_SECRET
 wrangler pages secret put ADMIN_EMAILS
+
+# Preview (branch/PR deployments)
+wrangler pages secret put TURSO_AUTH_TOKEN --env preview
+wrangler pages secret put AUTH_SECRET --env preview
+wrangler pages secret put AUTH_GOOGLE_ID --env preview
+wrangler pages secret put AUTH_GOOGLE_SECRET --env preview
+wrangler pages secret put ADMIN_EMAILS --env preview
 ```
 
-Each command prompts for the value interactively. This sets the secret for all environments (production and preview) at once.
+Each command prompts for the value interactively. Alternatively, use the dashboard where you can set secrets for both environments in one place (Settings > Environment variables — check both Production and Preview tabs).
 
 ### Subsequent deploys
 
