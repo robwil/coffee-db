@@ -34,16 +34,16 @@
 	let loading = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
 
-	const isNewEntry = $derived(!selectedId && query.trim().length > 0);
+	const isNewEntry = $derived(!selectedId && !loading && query.trim().length > 0);
 
 	function search() {
 		clearTimeout(searchTimeout);
 		selectedId = '';
 		manufacturer = '';
 		highlightIndex = -1;
+		results = [];
+		showDropdown = false;
 		if (!query.trim()) {
-			results = [];
-			showDropdown = false;
 			loading = false;
 			return;
 		}
