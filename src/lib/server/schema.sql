@@ -110,3 +110,31 @@ CREATE INDEX IF NOT EXISTS idx_pourover_brews_grinder ON pourover_brews (grinder
 CREATE INDEX IF NOT EXISTS idx_machines_name ON machines (name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_grinders_name ON grinders (name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_drippers_name ON drippers (name COLLATE NOCASE);
+
+-- FTS5 full-text search on beans
+CREATE VIRTUAL TABLE IF NOT EXISTS beans_fts USING fts5(
+  name,
+  roaster,
+  origin,
+  tasting_notes,
+  content='beans',
+  content_rowid='rowid'
+);
+
+-- Triggers to keep beans_fts in sync with beans
+CREATE TRIGGER IF NOT EXISTS beans_fts_insert AFTER INSERT ON beans BEGIN
+  INSERT INTO beans_fts(rowid, name, roaster, origin, tasting_notes)
+  VALUES (new.rowid, new.name, new.roaster, new.origin, new.tasting_notes);
+END;
+
+CREATE TRIGGER IF NOT EXISTS beans_fts_delete AFTER DELETE ON beans BEGIN
+  INSERT INTO beans_fts(beans_fts, rowid, name, roaster, origin, tasting_notes)
+  VALUES ('delete', old.rowid, old.name, old.roaster, old.origin, old.tasting_notes);
+END;
+
+CREATE TRIGGER IF NOT EXISTS beans_fts_update AFTER UPDATE ON beans BEGIN
+  INSERT INTO beans_fts(beans_fts, rowid, name, roaster, origin, tasting_notes)
+  VALUES ('delete', old.rowid, old.name, old.roaster, old.origin, old.tasting_notes);
+  INSERT INTO beans_fts(rowid, name, roaster, origin, tasting_notes)
+  VALUES (new.rowid, new.name, new.roaster, new.origin, new.tasting_notes);
+END;
