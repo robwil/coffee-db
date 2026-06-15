@@ -5,11 +5,17 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let activeTab = $state<'espresso' | 'pourover'>('espresso');
+	let activeTab = $state<'beans' | 'espresso' | 'pourover'>('beans');
 
-	function confirmDelete(event: SubmitEvent) {
-		if (!confirm('Delete this brew? This cannot be undone.')) {
-			event.preventDefault();
+	function confirmDelete({ cancel }: { cancel: () => void }) {
+		if (!confirm('Delete this? This cannot be undone.')) {
+			cancel();
+		}
+	}
+
+	function confirmDeleteBean({ cancel }: { cancel: () => void }) {
+		if (!confirm('Delete this bean and ALL its brews? This cannot be undone.')) {
+			cancel();
 		}
 	}
 </script>
@@ -18,6 +24,13 @@
 	<h1>Admin</h1>
 
 	<div class="tab-bar">
+		<button
+			class="tab"
+			class:active={activeTab === 'beans'}
+			onclick={() => (activeTab = 'beans')}
+		>
+			Beans ({data.beans.length})
+		</button>
 		<button
 			class="tab"
 			class:active={activeTab === 'espresso'}
@@ -34,7 +47,46 @@
 		</button>
 	</div>
 
-	{#if activeTab === 'espresso'}
+	{#if activeTab === 'beans'}
+		<div class="brew-table">
+			{#each data.beans as bean (bean.id)}
+				<div class="brew-row card">
+					<div class="brew-info">
+						<div class="brew-primary">
+							<strong>{bean.name}</strong>
+							{#if bean.roaster}
+								<span class="muted">by {bean.roaster}</span>
+							{/if}
+						</div>
+						<div class="brew-details">
+							{#if bean.origin}
+								<span class="tag">{bean.origin}</span>
+							{/if}
+							{#if bean.roaster_country}
+								<span class="muted">{bean.roaster_country}</span>
+							{/if}
+							<span class="muted">{bean.espresso_count} espresso / {bean.pourover_count} pourover</span>
+						</div>
+						<div class="brew-meta">
+							<span class="muted">{format(String(bean.created_at))}</span>
+							{#if bean.submitted_by}
+								<span class="muted">by {bean.submitted_by}</span>
+							{/if}
+						</div>
+					</div>
+					<div class="brew-actions">
+						<a href="/admin/beans/{bean.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+						<form method="POST" action="?/deleteBean" use:enhance={confirmDeleteBean}>
+							<input type="hidden" name="id" value={bean.id} />
+							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
+						</form>
+					</div>
+				</div>
+			{:else}
+				<p class="empty">No beans yet.</p>
+			{/each}
+		</div>
+	{:else if activeTab === 'espresso'}
 		<div class="brew-table">
 			{#each data.espressoBrews as brew (brew.id)}
 				<div class="brew-row card">
@@ -66,7 +118,7 @@
 					</div>
 					<div class="brew-actions">
 						<a href="/admin/espresso/{brew.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
-						<form method="POST" action="?/deleteEspresso" use:enhance onsubmit={confirmDelete}>
+						<form method="POST" action="?/deleteEspresso" use:enhance={confirmDelete}>
 							<input type="hidden" name="id" value={brew.id} />
 							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
 						</form>
@@ -111,7 +163,7 @@
 					</div>
 					<div class="brew-actions">
 						<a href="/admin/pourover/{brew.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
-						<form method="POST" action="?/deletePourover" use:enhance onsubmit={confirmDelete}>
+						<form method="POST" action="?/deletePourover" use:enhance={confirmDelete}>
 							<input type="hidden" name="id" value={brew.id} />
 							<button type="submit" class="btn btn-danger btn-sm">Delete</button>
 						</form>

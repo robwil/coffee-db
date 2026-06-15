@@ -29,9 +29,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 		args: []
 	});
 
+	const beansResult = await db.execute({
+		sql: `SELECT b.*,
+			(SELECT COUNT(*) FROM espresso_brews WHERE bean_id = b.id) as espresso_count,
+			(SELECT COUNT(*) FROM pourover_brews WHERE bean_id = b.id) as pourover_count
+		 FROM beans b
+		 ORDER BY b.created_at DESC`,
+		args: []
+	});
+
 	return {
 		espressoBrews: espressoResult.rows,
-		pouroverBrews: pouroverResult.rows
+		pouroverBrews: pouroverResult.rows,
+		beans: beansResult.rows
 	};
 };
 
@@ -55,6 +65,20 @@ export const actions: Actions = {
 
 		const db = getDb();
 		await db.execute({ sql: 'DELETE FROM pourover_brews WHERE id = ?', args: [id] });
+		return { deleted: true };
+	},
+
+	deleteBean: async ({ locals, request }) => {
+		await requireAdmin(locals);
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		if (!id) return fail(400, { error: 'Missing bean id' });
+
+		const db = getDb();
+		// Delete associated brews first (foreign key constraint)
+		await db.execute({ sql: 'DELETE FROM espresso_brews WHERE bean_id = ?', args: [id] });
+		await db.execute({ sql: 'DELETE FROM pourover_brews WHERE bean_id = ?', args: [id] });
+		await db.execute({ sql: 'DELETE FROM beans WHERE id = ?', args: [id] });
 		return { deleted: true };
 	}
 };
