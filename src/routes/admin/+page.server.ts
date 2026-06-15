@@ -38,10 +38,38 @@ export const load: PageServerLoad = async ({ locals }) => {
 		args: []
 	});
 
+	const machinesResult = await db.execute({
+		sql: `SELECT m.*,
+			(SELECT COUNT(*) FROM espresso_brews WHERE machine_id = m.id) as brew_count
+		 FROM machines m
+		 ORDER BY m.name COLLATE NOCASE`,
+		args: []
+	});
+
+	const grindersResult = await db.execute({
+		sql: `SELECT g.*,
+			(SELECT COUNT(*) FROM espresso_brews WHERE grinder_id = g.id) as espresso_count,
+			(SELECT COUNT(*) FROM pourover_brews WHERE grinder_id = g.id) as pourover_count
+		 FROM grinders g
+		 ORDER BY g.name COLLATE NOCASE`,
+		args: []
+	});
+
+	const drippersResult = await db.execute({
+		sql: `SELECT d.*,
+			(SELECT COUNT(*) FROM pourover_brews WHERE dripper_id = d.id) as brew_count
+		 FROM drippers d
+		 ORDER BY d.name COLLATE NOCASE`,
+		args: []
+	});
+
 	return {
 		espressoBrews: espressoResult.rows,
 		pouroverBrews: pouroverResult.rows,
-		beans: beansResult.rows
+		beans: beansResult.rows,
+		machines: machinesResult.rows,
+		grinders: grindersResult.rows,
+		drippers: drippersResult.rows
 	};
 };
 
@@ -80,5 +108,104 @@ export const actions: Actions = {
 		await db.execute({ sql: 'DELETE FROM pourover_brews WHERE bean_id = ?', args: [id] });
 		await db.execute({ sql: 'DELETE FROM beans WHERE id = ?', args: [id] });
 		return { deleted: true };
+	},
+
+	deleteMachine: async ({ locals, request }) => {
+		await requireAdmin(locals);
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		if (!id) return fail(400, { error: 'Missing machine id' });
+
+		const db = getDb();
+		const refs = await db.execute({
+			sql: 'SELECT COUNT(*) as cnt FROM espresso_brews WHERE machine_id = ?',
+			args: [id]
+		});
+		if (Number(refs.rows[0].cnt) > 0) {
+			return fail(400, { error: 'Cannot delete: machine is referenced by brews' });
+		}
+
+		await db.execute({ sql: 'DELETE FROM machines WHERE id = ?', args: [id] });
+		return { deleted: true };
+	},
+
+	deleteGrinder: async ({ locals, request }) => {
+		await requireAdmin(locals);
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		if (!id) return fail(400, { error: 'Missing grinder id' });
+
+		const db = getDb();
+		const espressoRefs = await db.execute({
+			sql: 'SELECT COUNT(*) as cnt FROM espresso_brews WHERE grinder_id = ?',
+			args: [id]
+		});
+		const pouroverRefs = await db.execute({
+			sql: 'SELECT COUNT(*) as cnt FROM pourover_brews WHERE grinder_id = ?',
+			args: [id]
+		});
+		if (Number(espressoRefs.rows[0].cnt) + Number(pouroverRefs.rows[0].cnt) > 0) {
+			return fail(400, { error: 'Cannot delete: grinder is referenced by brews' });
+		}
+
+		await db.execute({ sql: 'DELETE FROM grinders WHERE id = ?', args: [id] });
+		return { deleted: true };
+	},
+
+	deleteDripper: async ({ locals, request }) => {
+		await requireAdmin(locals);
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		if (!id) return fail(400, { error: 'Missing dripper id' });
+
+		const db = getDb();
+		const refs = await db.execute({
+			sql: 'SELECT COUNT(*) as cnt FROM pourover_brews WHERE dripper_id = ?',
+			args: [id]
+		});
+		if (Number(refs.rows[0].cnt) > 0) {
+			return fail(400, { error: 'Cannot delete: dripper is referenced by brews' });
+		}
+
+		await db.execute({ sql: 'DELETE FROM drippers WHERE id = ?', args: [id] });
+		return { deleted: true };
+	},
+
+	findUnusedMachines: async ({ locals }) => {
+		await requireAdmin(locals);
+		const db = getDb();
+		const result = await db.execute({
+			sql: `DELETE FROM machines WHERE id NOT IN (
+				SELECT DISTINCT machine_id FROM espresso_brews WHERE machine_id IS NOT NULL
+			)`,
+			args: []
+		});
+		return { purged: 'machines', count: result.rowsAffected };
+	},
+
+	findUnusedGrinders: async ({ locals }) => {
+		await requireAdmin(locals);
+		const db = getDb();
+		const result = await db.execute({
+			sql: `DELETE FROM grinders WHERE id NOT IN (
+				SELECT DISTINCT grinder_id FROM espresso_brews WHERE grinder_id IS NOT NULL
+				UNION
+				SELECT DISTINCT grinder_id FROM pourover_brews WHERE grinder_id IS NOT NULL
+			)`,
+			args: []
+		});
+		return { purged: 'grinders', count: result.rowsAffected };
+	},
+
+	findUnusedDrippers: async ({ locals }) => {
+		await requireAdmin(locals);
+		const db = getDb();
+		const result = await db.execute({
+			sql: `DELETE FROM drippers WHERE id NOT IN (
+				SELECT DISTINCT dripper_id FROM pourover_brews WHERE dripper_id IS NOT NULL
+			)`,
+			args: []
+		});
+		return { purged: 'drippers', count: result.rowsAffected };
 	}
 };
