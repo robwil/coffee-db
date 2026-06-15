@@ -149,7 +149,7 @@
 <style>
 	.hero {
 		text-align: center;
-		padding: 3rem 0 2rem;
+		padding: 1.5rem 0 2rem;
 	}
 
 	h1 {
