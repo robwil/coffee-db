@@ -41,7 +41,23 @@ turso db tokens create coffee-db
 # Output: a long JWT string — save this
 ```
 
-## 3. Set up environment variables
+## 3. Create Google OAuth credentials
+
+Admin features (edit/delete brews) require Google sign-in, restricted to an email allowlist.
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create a new project (or select an existing one)
+3. Go to **APIs & Services** > **Credentials** > **Create Credentials** > **OAuth client ID**
+4. Application type: **Web application**
+5. Add **Authorized JavaScript origins**:
+   - Local dev: `http://localhost:5173`
+   - Production: `https://your-domain.com`
+6. Add **Authorized redirect URIs**:
+   - Local dev: `http://localhost:5173/auth/callback/google`
+   - Production: `https://your-domain.com/auth/callback/google`
+7. Copy the **Client ID** and **Client secret**
+
+## 4. Set up environment variables
 
 Create a `.env` file for local development:
 
@@ -54,7 +70,14 @@ Then fill in the values:
 ```
 TURSO_DATABASE_URL=libsql://coffee-db-<your-username>.turso.io
 TURSO_AUTH_TOKEN=<your-token-from-step-2>
+
+AUTH_SECRET=<run: openssl rand -base64 33>
+AUTH_GOOGLE_ID=<client-id-from-step-3>
+AUTH_GOOGLE_SECRET=<client-secret-from-step-3>
+ADMIN_EMAILS=you@example.com
 ```
+
+`ADMIN_EMAILS` is a comma-separated list of Google emails allowed to sign in. Users not on the list are rejected at login.
 
 For **local-only development** without a remote database, you can use Turso's local dev server instead:
 
@@ -71,7 +94,7 @@ TURSO_DATABASE_URL=http://127.0.0.1:8080
 
 (No auth token needed for the local dev server.)
 
-## 4. Initialize the remote database schema
+## 5. Initialize the remote database schema
 
 Push your schema and seed data to the remote Turso database:
 
@@ -90,7 +113,7 @@ sqlite3 data/coffee.db .dump > /tmp/coffee-dump.sql
 turso db shell coffee-db < /tmp/coffee-dump.sql
 ```
 
-## 5. Install dependencies
+## 6. Install dependencies
 
 The migration from `better-sqlite3` to `@libsql/client` has already been done in the codebase. Install the updated dependencies:
 
@@ -103,7 +126,7 @@ Key dependency changes:
 - **Added:** `@libsql/client` (works in both Node.js and Cloudflare Workers)
 - **Added:** `@sveltejs/adapter-cloudflare` (replaces `adapter-auto`)
 
-## 6. Run locally
+## 7. Run locally
 
 ```fish
 npm run dev
@@ -113,7 +136,7 @@ The app connects to whatever `TURSO_DATABASE_URL` points to in your `.env`. For 
 - Point at the remote Turso database (simplest — shared state, needs internet)
 - Run `turso dev --db-file data/coffee.db` and point at `http://127.0.0.1:8080` (offline-capable, uses your local data)
 
-## 7. Deploy to Cloudflare Pages
+## 8. Deploy to Cloudflare Pages
 
 ### First-time setup
 
@@ -136,13 +159,17 @@ Alternatively, connect via the Cloudflare dashboard:
 
 `TURSO_DATABASE_URL` is set in `wrangler.toml` under `[vars]` — update the placeholder with your actual Turso URL.
 
-`TURSO_AUTH_TOKEN` is a credential and should be set as an encrypted **secret**, either via the dashboard (Settings > Environment variables > Add secret) or CLI:
+Secrets must be set via the dashboard (Settings > Environment variables > Add secret) or CLI. These are encrypted and not committed to source:
 
 ```fish
 wrangler pages secret put TURSO_AUTH_TOKEN
+wrangler pages secret put AUTH_SECRET
+wrangler pages secret put AUTH_GOOGLE_ID
+wrangler pages secret put AUTH_GOOGLE_SECRET
+wrangler pages secret put ADMIN_EMAILS
 ```
 
-This sets the secret for all environments (production and preview) at once.
+Each command prompts for the value interactively. This sets the secret for all environments (production and preview) at once.
 
 ### Subsequent deploys
 
@@ -152,7 +179,7 @@ If connected to Git, pushes to `main` trigger automatic deploys. For manual depl
 npm run build && npm run deploy
 ```
 
-## 8. Custom domain (optional)
+## 9. Custom domain (optional)
 
 In the Cloudflare dashboard, go to your Pages project > **Custom domains** > **Set up a custom domain**. If the domain is already on Cloudflare DNS, it provisions automatically.
 
@@ -181,9 +208,11 @@ Turso (libSQL)
 
 | File | Purpose |
 |---|---|
-| `wrangler.toml` | Cloudflare Pages configuration (compatibility flags) |
+| `wrangler.toml` | Cloudflare Pages configuration (compatibility flags, public vars) |
 | `.env.example` | Template for local environment variables |
 | `src/lib/server/db.ts` | Database client — creates a `@libsql/client` instance from env vars |
+| `src/auth.ts` | Auth.js configuration — Google provider, email allowlist callback |
+| `src/lib/server/auth.ts` | `requireAdmin()` helper — guards admin routes |
 | `vite.config.ts` | Uses `@sveltejs/adapter-cloudflare` for production builds |
 
 ## Turso CLI cheat sheet

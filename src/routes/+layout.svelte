@@ -1,7 +1,10 @@
 <script lang="ts">
 	import '../app.css';
+	import { signIn, signOut } from '@auth/sveltekit/client';
 
-	let { children } = $props();
+	let { children, data } = $props();
+
+	const session = $derived(data.session);
 </script>
 
 <svelte:head>
@@ -14,6 +17,12 @@
 		<div class="nav-links">
 			<a href="/browse">Browse</a>
 			<a href="/beans/new">Add Bean</a>
+			{#if session?.user}
+				<a href="/admin">Admin</a>
+				<button class="nav-auth" onclick={() => signOut()}>Sign Out</button>
+			{:else}
+				<button class="nav-auth" onclick={() => signIn('google')}>Sign In</button>
+			{/if}
 		</div>
 	</nav>
 </header>
@@ -51,6 +60,19 @@
 	.nav-links {
 		display: flex;
 		gap: 1.5rem;
+	}
+
+	.nav-auth {
+		background: none;
+		border: none;
+		color: var(--color-primary);
+		font-size: inherit;
+		padding: 0;
+	}
+
+	.nav-auth:hover {
+		color: var(--color-primary-hover);
+		text-decoration: underline;
 	}
 
 	main {
