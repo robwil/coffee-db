@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { signIn, signOut } from '@auth/sveltekit/client';
+	import { navigating } from '$app/stores';
 
 	let { children, data } = $props();
 
@@ -10,6 +11,10 @@
 <svelte:head>
 	<title>Coffee DB</title>
 </svelte:head>
+
+{#if $navigating}
+	<div class="nav-progress" aria-hidden="true"></div>
+{/if}
 
 <header>
 	<nav class="container">
@@ -32,6 +37,23 @@
 </main>
 
 <style>
+	.nav-progress {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: var(--color-primary);
+		z-index: 100;
+		animation: progress 1s ease-in-out infinite;
+	}
+
+	@keyframes progress {
+		0% { transform: scaleX(0); transform-origin: left; }
+		50% { transform: scaleX(0.7); transform-origin: left; }
+		100% { transform: scaleX(1); transform-origin: left; }
+	}
+
 	header {
 		background: var(--color-surface);
 		border-bottom: 1px solid var(--color-border);

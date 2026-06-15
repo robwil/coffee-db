@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Spinner from '$lib/components/Spinner.svelte';
+
 	let {
 		label,
 		name,
@@ -29,6 +31,7 @@
 	let manufacturer = $state('');
 	let showDropdown = $state(false);
 	let highlightIndex = $state(-1);
+	let loading = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout>;
 
 	const isNewEntry = $derived(!selectedId && query.trim().length > 0);
@@ -41,12 +44,15 @@
 		if (!query.trim()) {
 			results = [];
 			showDropdown = false;
+			loading = false;
 			return;
 		}
+		loading = true;
 		searchTimeout = setTimeout(async () => {
 			const res = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`);
 			results = await res.json();
 			showDropdown = true;
+			loading = false;
 		}, 200);
 	}
 
@@ -113,6 +119,9 @@
 		aria-expanded={showDropdown && results.length > 0}
 		aria-activedescendant={highlightIndex >= 0 ? `${name}-option-${highlightIndex}` : undefined}
 	/>
+	{#if loading}
+		<div class="loading-hint"><Spinner size="0.85rem" /> Searching...</div>
+	{/if}
 	{#if showDropdown && results.length > 0}
 		<div class="dropdown" role="listbox" id="{name}-listbox">
 			{#each results as item, i}
@@ -192,6 +201,15 @@
 		font-weight: 400;
 		font-style: italic;
 		color: var(--color-text-muted);
+	}
+
+	.loading-hint {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		padding: 0.25rem 0;
 	}
 
 	.manufacturer-field {

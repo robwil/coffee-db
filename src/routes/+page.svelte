@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import BeanCard from '$lib/components/BeanCard.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let searchQuery = $state('');
@@ -36,7 +37,11 @@
 				oninput={handleSearch}
 				class="search-input"
 			/>
-			{#if searchResults.length > 0}
+			{#if searching}
+				<div class="search-dropdown">
+					<div class="search-result no-results"><Spinner size="0.9rem" /> Searching...</div>
+				</div>
+			{:else if searchResults.length > 0}
 				<div class="search-dropdown">
 					{#each searchResults as bean}
 						<a href="/beans/{bean.id}" class="search-result">

@@ -4,9 +4,11 @@
 	import EquipmentAutocomplete from '$lib/components/EquipmentAutocomplete.svelte';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 	import Turnstile from '$lib/components/Turnstile.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const bean = $derived(data.bean as unknown as { id: string; name: string });
+	let submitting = $state(false);
 </script>
 
 <div class="container">
@@ -19,7 +21,7 @@
 		<div class="form-error" role="alert">{form.error}</div>
 	{/if}
 
-	<form method="POST" use:enhance class="brew-form">
+	<form method="POST" use:enhance={() => { submitting = true; return async ({ update }) => { submitting = false; await update(); }; }} class="brew-form">
 		<div class="form-section">
 			<h2>Core Recipe</h2>
 
@@ -143,7 +145,10 @@
 		</AdvancedToggle>
 
 		<Turnstile />
-		<button type="submit" class="btn btn-primary">Submit Recipe</button>
+		<button type="submit" class="btn btn-primary" disabled={submitting}>
+			{#if submitting}<Spinner size="0.9rem" />{/if}
+			Submit Recipe
+		</button>
 	</form>
 </div>
 

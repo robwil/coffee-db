@@ -4,10 +4,12 @@
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 	import Turnstile from '$lib/components/Turnstile.svelte';
 	import BeanSuggestions from '$lib/components/BeanSuggestions.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
 	let beanName = $state('');
+	let submitting = $state(false);
 </script>
 
 <div class="container">
@@ -17,7 +19,7 @@
 		<div class="form-error" role="alert">{form.error}</div>
 	{/if}
 
-	<form method="POST" use:enhance class="brew-form">
+	<form method="POST" use:enhance={() => { submitting = true; return async ({ update }) => { submitting = false; await update(); }; }} class="brew-form">
 		<div class="form-section">
 			<h2>Core Info</h2>
 			<div class="form-group">
@@ -112,7 +114,10 @@
 		</AdvancedToggle>
 
 		<Turnstile />
-		<button type="submit" class="btn btn-primary">Add Bean</button>
+		<button type="submit" class="btn btn-primary" disabled={submitting}>
+			{#if submitting}<Spinner size="0.9rem" />{/if}
+			Add Bean
+		</button>
 	</form>
 </div>
 
