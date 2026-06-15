@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import EquipmentAutocomplete from '$lib/components/EquipmentAutocomplete.svelte';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 	import Turnstile from '$lib/components/Turnstile.svelte';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const bean = $derived(data.bean as unknown as { id: string; name: string });
 </script>
 
@@ -14,6 +14,10 @@
 		<a href="/beans/{bean.id}">{bean.name}</a> &rsaquo; Add Espresso Recipe
 	</p>
 	<h1>Add Espresso Recipe</h1>
+
+	{#if form?.error}
+		<div class="form-error" role="alert">{form.error}</div>
+	{/if}
 
 	<form method="POST" use:enhance class="brew-form">
 		<div class="form-section">

@@ -4,12 +4,18 @@
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
 	import Turnstile from '$lib/components/Turnstile.svelte';
 	import BeanSuggestions from '$lib/components/BeanSuggestions.svelte';
+	import type { ActionData } from './$types';
 
+	let { form }: { form: ActionData } = $props();
 	let beanName = $state('');
 </script>
 
 <div class="container">
 	<h1>Add a New Bean</h1>
+
+	{#if form?.error}
+		<div class="form-error" role="alert">{form.error}</div>
+	{/if}
 
 	<form method="POST" use:enhance class="brew-form">
 		<div class="form-section">
