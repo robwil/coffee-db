@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async () => {
 	const db = getDb();
 
-	const recentBeans = db.prepare(`
+	const recentBeansResult = await db.execute(`
 		SELECT b.*,
 			(SELECT COUNT(*) FROM espresso_brews WHERE bean_id = b.id) as espresso_count,
 			(SELECT COUNT(*) FROM pourover_brews WHERE bean_id = b.id) as pourover_count,
@@ -16,14 +16,17 @@ export const load: PageServerLoad = async () => {
 		FROM beans b
 		ORDER BY b.created_at DESC
 		LIMIT 10
-	`).all();
+	`);
 
-	const stats = db.prepare(`
+	const statsResult = await db.execute(`
 		SELECT
 			(SELECT COUNT(*) FROM beans) as bean_count,
 			(SELECT COUNT(*) FROM espresso_brews) + (SELECT COUNT(*) FROM pourover_brews) as brew_count,
 			(SELECT COUNT(DISTINCT roaster) FROM beans WHERE roaster IS NOT NULL) as roaster_count
-	`).get() as { bean_count: number; brew_count: number; roaster_count: number };
+	`);
 
-	return { recentBeans, stats };
+	return {
+		recentBeans: recentBeansResult.rows,
+		stats: statsResult.rows[0] as unknown as { bean_count: number; brew_count: number; roaster_count: number }
+	};
 };

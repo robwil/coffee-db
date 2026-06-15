@@ -1,0 +1,7 @@
+name = "coffee-db"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+[vars]
+TURSO_DATABASE_URL = "libsql://coffee-db-robwil.aws-ap-northeast-1.turso.io"

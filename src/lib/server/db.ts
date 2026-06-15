@@ -1,30 +1,44 @@
-import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { createClient, type Client } from '@libsql/client/web';
+import { env } from '$env/dynamic/private';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dir = dirname(__filename);
+let _client: Client | null = null;
 
-const DB_PATH = join(__dir, '..', '..', '..', 'data', 'coffee.db');
+export function getDb(): Client {
+	if (_client) return _client;
 
-let _db: Database.Database | null = null;
+	const url = env.TURSO_DATABASE_URL;
+	if (!url) throw new Error('TURSO_DATABASE_URL is not set');
 
-export function getDb(): Database.Database {
-	if (_db) return _db;
+	_client = createClient({
+		url,
+		authToken: env.TURSO_AUTH_TOKEN
+	});
 
-	_db = new Database(DB_PATH);
-	_db.pragma('journal_mode = WAL');
-	_db.pragma('foreign_keys = ON');
-
-	const schema = readFileSync(join(__dir, 'schema.sql'), 'utf-8');
-	_db.exec(schema);
-
-	return _db;
+	return _client;
 }
 
-export function seedDb(): void {
+export async function initSchema(): Promise<void> {
 	const db = getDb();
+	const { readFileSync } = await import('fs');
+	const { fileURLToPath } = await import('url');
+	const { dirname, join } = await import('path');
+
+	const __filename = fileURLToPath(import.meta.url);
+	const __dir = dirname(__filename);
+
+	const schema = readFileSync(join(__dir, 'schema.sql'), 'utf-8');
+	await db.executeMultiple(schema);
+}
+
+export async function seedDb(): Promise<void> {
+	const db = getDb();
+	const { readFileSync } = await import('fs');
+	const { fileURLToPath } = await import('url');
+	const { dirname, join } = await import('path');
+
+	const __filename = fileURLToPath(import.meta.url);
+	const __dir = dirname(__filename);
+
 	const seed = readFileSync(join(__dir, 'seed.sql'), 'utf-8');
-	db.exec(seed);
+	await db.executeMultiple(seed);
 }

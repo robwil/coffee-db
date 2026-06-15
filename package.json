@@ -7,12 +7,13 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-cloudflare": "^7.0.0",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"svelte": "^5.56.1",
@@ -21,8 +22,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
-		"@types/better-sqlite3": "^7.6.13",
-		"better-sqlite3": "^12.10.0",
+		"@libsql/client": "^0.15.0",
 		"timeago.js": "^4.0.2"
 	}
 }

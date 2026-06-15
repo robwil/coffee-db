@@ -7,12 +7,13 @@ export const GET: RequestHandler = async ({ url }) => {
 	const db = getDb();
 
 	if (q) {
-		const results = db
-			.prepare('SELECT * FROM machines WHERE name LIKE ? OR manufacturer LIKE ? OR (manufacturer || \' \' || name) LIKE ? ORDER BY name COLLATE NOCASE LIMIT 10')
-			.all(`%${q}%`, `%${q}%`, `%${q}%`);
-		return json(results);
+		const result = await db.execute({
+			sql: `SELECT * FROM machines WHERE name LIKE ? OR manufacturer LIKE ? OR (manufacturer || ' ' || name) LIKE ? ORDER BY name COLLATE NOCASE LIMIT 10`,
+			args: [`%${q}%`, `%${q}%`, `%${q}%`]
+		});
+		return json(result.rows);
 	}
 
-	const all = db.prepare('SELECT * FROM machines ORDER BY name COLLATE NOCASE').all();
-	return json(all);
+	const result = await db.execute('SELECT * FROM machines ORDER BY name COLLATE NOCASE');
+	return json(result.rows);
 };

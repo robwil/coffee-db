@@ -7,15 +7,14 @@ export const GET: RequestHandler = async ({ url }) => {
 	if (!q) return json([]);
 
 	const db = getDb();
-	const results = db
-		.prepare(
-			`SELECT id, name, roaster, origin, roast_level, roaster_country
+	const result = await db.execute({
+		sql: `SELECT id, name, roaster, origin, roast_level, roaster_country
 			 FROM beans
 			 WHERE name LIKE ? OR roaster LIKE ? OR origin LIKE ?
 			 ORDER BY name COLLATE NOCASE
-			 LIMIT 10`
-		)
-		.all(`%${q}%`, `%${q}%`, `%${q}%`);
+			 LIMIT 10`,
+		args: [`%${q}%`, `%${q}%`, `%${q}%`]
+	});
 
-	return json(results);
+	return json(result.rows);
 };

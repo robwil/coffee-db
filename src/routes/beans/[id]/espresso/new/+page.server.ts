@@ -5,7 +5,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const db = getDb();
-	const bean = db.prepare('SELECT id, name, roaster FROM beans WHERE id = ?').get(params.id) as { id: string; name: string; roaster: string | null } | undefined;
+	const result = await db.execute({
+		sql: 'SELECT id, name, roaster FROM beans WHERE id = ?',
+		args: [params.id]
+	});
+	const bean = result.rows[0] as unknown as { id: string; name: string; roaster: string | null } | undefined;
 	if (!bean) throw error(404, 'Bean not found');
 	return { bean };
 };
@@ -20,10 +24,13 @@ export const actions: Actions = {
 
 		const db = getDb();
 
-		const bean = db.prepare('SELECT id FROM beans WHERE id = ?').get(params.id);
-		if (!bean) throw error(404, 'Bean not found');
+		const beanCheck = await db.execute({
+			sql: 'SELECT id FROM beans WHERE id = ?',
+			args: [params.id]
+		});
+		if (beanCheck.rows.length === 0) throw error(404, 'Bean not found');
 
-		const machineId = resolveEquipment(
+		const machineId = await resolveEquipment(
 			db,
 			'machines',
 			form.get('machine_id')?.toString() || null,
@@ -31,7 +38,7 @@ export const actions: Actions = {
 			form.get('machine_manufacturer')?.toString().trim() || null
 		);
 
-		const grinderId = resolveEquipment(
+		const grinderId = await resolveEquipment(
 			db,
 			'grinders',
 			form.get('grinder_id')?.toString() || null,
@@ -54,30 +61,31 @@ export const actions: Actions = {
 		const additionalNotes = form.get('additional_notes')?.toString().trim() || null;
 		const submittedBy = form.get('submitted_by')?.toString().trim() || null;
 
-		db.prepare(
-			`INSERT INTO espresso_brews (bean_id, machine_id, grinder_id, dose_grams, yield_grams,
+		await db.execute({
+			sql: `INSERT INTO espresso_brews (bean_id, machine_id, grinder_id, dose_grams, yield_grams,
 				total_time_seconds, preinfusion_time_seconds, grind_setting, rating, tasting_notes,
 				days_rested, burr_set, water_temp_c, basket, pressure_profile, additional_notes, submitted_by)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			params.id,
-			machineId,
-			grinderId,
-			doseGrams,
-			yieldGrams,
-			totalTime,
-			preinfusionTime,
-			grindSetting,
-			rating,
-			tastingNotes,
-			daysRested,
-			burrSet,
-			waterTempC,
-			basket,
-			pressureProfile,
-			additionalNotes,
-			submittedBy
-		);
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			args: [
+				params.id,
+				machineId,
+				grinderId,
+				doseGrams,
+				yieldGrams,
+				totalTime,
+				preinfusionTime,
+				grindSetting,
+				rating,
+				tastingNotes,
+				daysRested,
+				burrSet,
+				waterTempC,
+				basket,
+				pressureProfile,
+				additionalNotes,
+				submittedBy
+			]
+		});
 
 		throw redirect(303, `/beans/${params.id}`);
 	}

@@ -23,13 +23,11 @@ export const actions: Actions = {
 		const submittedBy = form.get('submitted_by')?.toString().trim() || null;
 
 		const db = getDb();
-		const result = db
-			.prepare(
-				`INSERT INTO beans (name, roaster, origin, roast_level, caffeine, roaster_city, roaster_country, weight_grams, price, currency, product_url, tasting_notes, submitted_by)
+		const result = await db.execute({
+			sql: `INSERT INTO beans (name, roaster, origin, roast_level, caffeine, roaster_city, roaster_country, weight_grams, price, currency, product_url, tasting_notes, submitted_by)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				 RETURNING id`
-			)
-			.get(
+				 RETURNING id`,
+			args: [
 				name,
 				roaster,
 				origin,
@@ -43,8 +41,9 @@ export const actions: Actions = {
 				productUrl,
 				tastingNotes,
 				submittedBy
-			) as { id: string };
+			]
+		});
 
-		throw redirect(303, `/beans/${result.id}`);
+		throw redirect(303, `/beans/${result.rows[0].id}`);
 	}
 };

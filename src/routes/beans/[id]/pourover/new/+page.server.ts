@@ -5,7 +5,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const db = getDb();
-	const bean = db.prepare('SELECT id, name, roaster FROM beans WHERE id = ?').get(params.id) as { id: string; name: string; roaster: string | null } | undefined;
+	const result = await db.execute({
+		sql: 'SELECT id, name, roaster FROM beans WHERE id = ?',
+		args: [params.id]
+	});
+	const bean = result.rows[0] as unknown as { id: string; name: string; roaster: string | null } | undefined;
 	if (!bean) throw error(404, 'Bean not found');
 	return { bean };
 };
@@ -19,10 +23,13 @@ export const actions: Actions = {
 
 		const db = getDb();
 
-		const bean = db.prepare('SELECT id FROM beans WHERE id = ?').get(params.id);
-		if (!bean) throw error(404, 'Bean not found');
+		const beanCheck = await db.execute({
+			sql: 'SELECT id FROM beans WHERE id = ?',
+			args: [params.id]
+		});
+		if (beanCheck.rows.length === 0) throw error(404, 'Bean not found');
 
-		const dripperId = resolveEquipment(
+		const dripperId = await resolveEquipment(
 			db,
 			'drippers',
 			form.get('dripper_id')?.toString() || null,
@@ -30,7 +37,7 @@ export const actions: Actions = {
 			form.get('dripper_manufacturer')?.toString().trim() || null
 		);
 
-		const grinderId = resolveEquipment(
+		const grinderId = await resolveEquipment(
 			db,
 			'grinders',
 			form.get('grinder_id')?.toString() || null,
@@ -55,34 +62,35 @@ export const actions: Actions = {
 		const additionalNotes = form.get('additional_notes')?.toString().trim() || null;
 		const submittedBy = form.get('submitted_by')?.toString().trim() || null;
 
-		db.prepare(
-			`INSERT INTO pourover_brews (bean_id, dripper_id, grinder_id, dose_grams, water_grams,
+		await db.execute({
+			sql: `INSERT INTO pourover_brews (bean_id, dripper_id, grinder_id, dose_grams, water_grams,
 				total_time_seconds, grind_setting, rating, tasting_notes, days_rested, filter_type,
 				burr_set, kettle, water_temp_c, bloom_time_seconds, bloom_water_grams, pour_count,
 				pour_technique, additional_notes, submitted_by)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			params.id,
-			dripperId,
-			grinderId,
-			doseGrams,
-			waterGrams,
-			totalTime,
-			grindSetting,
-			rating,
-			tastingNotes,
-			daysRested,
-			filterType,
-			burrSet,
-			kettle,
-			waterTempC,
-			bloomTime,
-			bloomWater,
-			pourCount,
-			pourTechnique,
-			additionalNotes,
-			submittedBy
-		);
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			args: [
+				params.id,
+				dripperId,
+				grinderId,
+				doseGrams,
+				waterGrams,
+				totalTime,
+				grindSetting,
+				rating,
+				tastingNotes,
+				daysRested,
+				filterType,
+				burrSet,
+				kettle,
+				waterTempC,
+				bloomTime,
+				bloomWater,
+				pourCount,
+				pourTechnique,
+				additionalNotes,
+				submittedBy
+			]
+		});
 
 		throw redirect(303, `/beans/${params.id}?tab=pourover`);
 	}

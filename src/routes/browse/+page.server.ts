@@ -42,9 +42,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-	const beans = db
-		.prepare(
-			`SELECT DISTINCT b.*,
+	const beansResult = await db.execute({
+		sql: `SELECT DISTINCT b.*,
 				(SELECT COUNT(*) FROM espresso_brews WHERE bean_id = b.id) as espresso_count,
 				(SELECT COUNT(*) FROM pourover_brews WHERE bean_id = b.id) as pourover_count,
 				(SELECT ROUND(AVG(rating), 1) FROM (
@@ -56,35 +55,33 @@ export const load: PageServerLoad = async ({ url }) => {
 			LEFT JOIN espresso_brews eb ON eb.bean_id = b.id
 			LEFT JOIN pourover_brews pb ON pb.bean_id = b.id
 			${where}
-			ORDER BY b.created_at DESC`
-		)
-		.all(...params);
+			ORDER BY b.created_at DESC`,
+		args: params
+	});
 
-	const machines = db.prepare('SELECT * FROM machines ORDER BY name COLLATE NOCASE').all() as Machine[];
-	const grinders = db.prepare('SELECT * FROM grinders ORDER BY name COLLATE NOCASE').all() as Grinder[];
-	const drippers = db.prepare('SELECT * FROM drippers ORDER BY name COLLATE NOCASE').all() as Dripper[];
-	const roasters = db
-		.prepare(
-			'SELECT DISTINCT roaster FROM beans WHERE roaster IS NOT NULL ORDER BY roaster COLLATE NOCASE'
-		)
-		.all()
-		.map((r: any) => r.roaster);
-	const origins = db
-		.prepare(
-			'SELECT DISTINCT origin FROM beans WHERE origin IS NOT NULL ORDER BY origin COLLATE NOCASE'
-		)
-		.all()
-		.map((r: any) => r.origin);
-	const countries = db
-		.prepare(
-			'SELECT DISTINCT roaster_country FROM beans WHERE roaster_country IS NOT NULL ORDER BY roaster_country COLLATE NOCASE'
-		)
-		.all()
-		.map((r: any) => r.roaster_country);
+	const machinesResult = await db.execute('SELECT * FROM machines ORDER BY name COLLATE NOCASE');
+	const grindersResult = await db.execute('SELECT * FROM grinders ORDER BY name COLLATE NOCASE');
+	const drippersResult = await db.execute('SELECT * FROM drippers ORDER BY name COLLATE NOCASE');
+	const roastersResult = await db.execute(
+		'SELECT DISTINCT roaster FROM beans WHERE roaster IS NOT NULL ORDER BY roaster COLLATE NOCASE'
+	);
+	const originsResult = await db.execute(
+		'SELECT DISTINCT origin FROM beans WHERE origin IS NOT NULL ORDER BY origin COLLATE NOCASE'
+	);
+	const countriesResult = await db.execute(
+		'SELECT DISTINCT roaster_country FROM beans WHERE roaster_country IS NOT NULL ORDER BY roaster_country COLLATE NOCASE'
+	);
 
 	return {
-		beans,
-		filters: { machines, grinders, drippers, roasters, origins, countries },
+		beans: beansResult.rows,
+		filters: {
+			machines: machinesResult.rows as unknown as Machine[],
+			grinders: grindersResult.rows as unknown as Grinder[],
+			drippers: drippersResult.rows as unknown as Dripper[],
+			roasters: roastersResult.rows.map((r: any) => r.roaster),
+			origins: originsResult.rows.map((r: any) => r.origin),
+			countries: countriesResult.rows.map((r: any) => r.roaster_country)
+		},
 		activeFilters: { machineId, dripperId, grinderId, roaster, origin, country }
 	};
 };
