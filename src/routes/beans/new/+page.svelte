@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { ORIGINS, ROAST_LEVELS } from '$lib/types';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
+	import Turnstile from '$lib/components/Turnstile.svelte';
 </script>
 
 <div class="container">
@@ -100,6 +101,7 @@
 			</div>
 		</AdvancedToggle>
 
+		<Turnstile />
 		<button type="submit" class="btn btn-primary">Add Bean</button>
 	</form>
 </div>

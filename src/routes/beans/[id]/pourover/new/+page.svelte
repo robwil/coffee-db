@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import EquipmentAutocomplete from '$lib/components/EquipmentAutocomplete.svelte';
 	import AdvancedToggle from '$lib/components/AdvancedToggle.svelte';
+	import Turnstile from '$lib/components/Turnstile.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const bean = $derived(data.bean as unknown as { id: string; name: string });
@@ -137,6 +138,7 @@
 			</div>
 		</AdvancedToggle>
 
+		<Turnstile />
 		<button type="submit" class="btn btn-primary">Submit Recipe</button>
 	</form>
 </div>
