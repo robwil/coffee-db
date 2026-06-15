@@ -24,7 +24,11 @@
 		}
 	}
 
-	let { children }: { children: any } = $props();
+	let { children, startOpen = false }: { children: any; startOpen?: boolean } = $props();
+
+	if (startOpen) {
+		manualToggle = true;
+	}
 </script>
 
 <div class="advanced-toggle-row">

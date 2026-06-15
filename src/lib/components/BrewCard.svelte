@@ -29,15 +29,13 @@
 
 	const details = $derived.by(() => {
 		const parts: string[] = [];
-		if (brew.days_rested != null) parts.push(`${brew.days_rested}d rested`);
-		if (brew.burr_set) parts.push(brew.burr_set);
 		if (type === 'espresso') {
 			if (brew.basket) parts.push(brew.basket);
 			if (brew.pressure_profile) parts.push(brew.pressure_profile);
+			if (brew.burr_set) parts.push(brew.burr_set);
+			if (brew.days_rested != null) parts.push(`${brew.days_rested}d rested`);
 		}
 		if (type === 'pourover') {
-			if (brew.filter_type) parts.push(`${brew.filter_type} filter`);
-			if (brew.kettle) parts.push(brew.kettle);
 			if (brew.bloom_time_seconds || brew.bloom_water_grams) {
 				const bloom = [
 					brew.bloom_time_seconds ? formatTime(brew.bloom_time_seconds) : null,
@@ -47,6 +45,10 @@
 			}
 			if (brew.pour_count) parts.push(`${brew.pour_count} pours`);
 			if (brew.pour_technique) parts.push(brew.pour_technique);
+			if (brew.filter_type) parts.push(`${brew.filter_type} filter`);
+			if (brew.burr_set) parts.push(brew.burr_set);
+			if (brew.kettle) parts.push(brew.kettle);
+			if (brew.days_rested != null) parts.push(`${brew.days_rested}d rested`);
 		}
 		if (brew.additional_notes) parts.push(brew.additional_notes);
 		return parts.length ? parts : null;

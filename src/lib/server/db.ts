@@ -32,6 +32,10 @@ export async function initSchema(): Promise<void> {
 
 export async function seedDb(): Promise<void> {
 	const db = getDb();
+
+	const result = await db.execute({ sql: 'SELECT COUNT(*) as count FROM beans', args: [] });
+	if (Number(result.rows[0].count) > 0) return;
+
 	const { readFileSync } = await import('fs');
 	const { fileURLToPath } = await import('url');
 	const { dirname, join } = await import('path');

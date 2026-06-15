@@ -5,7 +5,9 @@
 		endpoint,
 		placeholder = 'Search...',
 		required = false,
-		optional = false
+		optional = false,
+		initialId = '',
+		initialName = ''
 	}: {
 		label: string;
 		name: string;
@@ -13,12 +15,14 @@
 		placeholder?: string;
 		required?: boolean;
 		optional?: boolean;
+		initialId?: string;
+		initialName?: string;
 	} = $props();
 
-	let query = $state('');
+	let query = $state(initialName);
 	let results = $state<any[]>([]);
-	let selectedId = $state('');
-	let selectedName = $state('');
+	let selectedId = $state(initialId);
+	let selectedName = $state(initialName);
 	let manufacturer = $state('');
 	let showDropdown = $state(false);
 	let highlightIndex = $state(-1);
